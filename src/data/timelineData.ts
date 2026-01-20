@@ -1,0 +1,296 @@
+import type { TimelineEvent } from '../types';
+
+// 故事幻灯片数据 - 每个故事包含多张照片和优美文案
+export interface StorySlide {
+  id: string;
+  chapter: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  quote?: string;
+  images: string[];
+  year?: string;
+}
+
+export const storySlides: StorySlide[] = [
+  {
+    id: '1',
+    chapter: '初见',
+    title: '命中注定的相遇',
+    subtitle: '高中时代',
+    description: '命运的齿轮在那个午后悄然转动。记得那是你来班级检查值日的时刻，手里拿着记录本，神情专注而认真。那一刻，阳光洒在你的侧脸，你那一丝不苟的模样，深深印刻在我的脑海里，成为了我整个青春最心动的开场。',
+    quote: '"初见你时，你站在光里，认真得可爱"',
+    images: [
+      '/images/daily/history/WechatIMG1904.jpg',
+    ],
+    year: '2012',
+  },
+  {
+    id: '13',
+    chapter: '微醺',
+    title: '簋街夜话',
+    subtitle: '离别前的温暖',
+    description: '那是你出国前我们难得的一次相聚。簋街的霓虹灯下，铜炉火锅的热气氤氲中，我们聊着过去，也憧憬着未来。虽然即将面临分别，但那一刻烟火气息里的温暖，足以抵御漫长的思念。',
+    quote: '"最好的时光，是和你一起吃火锅，哪怕明天就要远行"',
+    images: [
+      '/images/daily/guijie/WechatIMG1901.jpg',
+    ],
+    year: '2015',
+  },
+  {
+    id: '2',
+    chapter: '倾心',
+    title: '漂洋过海的挂念',
+    subtitle: '珍藏十年的礼物',
+    description: '那年冬天，你从美国归来，将这盒巧克力作为礼物送到我手中。这份来自大洋彼岸的挂念，我竟舍不得拆封，更不忍品尝。时光悄然流转，从2016到2026，整整十载。它一直被我静静珍藏，因为这不仅仅是一盒糖果，更是你送我的那份独一无二的心意，是我青春里最想留住的甜。',
+    quote: '"你送的每一样东西，我都视若珍宝"',
+    images: [
+      '/images/daily/chocolate/WechatIMG1877.jpg',
+    ],
+    year: '2016',
+  },
+  {
+    id: '3',
+    chapter: '定情',
+    title: '执手相许',
+    subtitle: '2019年7月20日 · 命运的转折点',
+    description: '夏日蝉鸣作证，晚风轻拂为媒。在这一天，我终于说出了那句藏在心底许久的话。从此，你不再是远方的星光，而是我掌心真实的温暖。这一天，成为我们爱情故事里最闪耀的坐标。',
+    quote: '"从今往后，我的所有日子，都与你有关"',
+    images: [
+      '/images/daily/anniversary/WechatIMG1790.jpg',
+      '/images/daily/anniversary/WechatIMG1791.jpg',
+      '/images/daily/anniversary/WechatIMG1792.jpg',
+      '/images/daily/anniversary/WechatIMG1795.jpg',
+      '/images/daily/anniversary/WechatIMG1796.jpg',
+    ],
+    year: '2019.07.20',
+  },
+  {
+    id: '4',
+    chapter: '相伴',
+    title: '并肩奋斗的时光',
+    subtitle: '梦想与你同在',
+    description: '无数个日日夜夜，我们在书海中并肩而行。阳光透过窗户洒在你的侧脸，是我见过最美的画面。偶尔抬头相视一笑，那种无声的默契，让枯燥的学习也变得甜蜜异常。',
+    quote: '"最好的爱情，是和你一起成长为更好的自己"',
+    images: [
+      '/images/daily/study/WechatIMG1897.jpg',
+      '/images/daily/study/WechatIMG1898.jpg',
+      '/images/daily/study/WechatIMG1899.jpg',
+      '/images/daily/study/WechatIMG1900.jpg',
+      '/images/daily/study/WechatIMG1902.jpg',
+    ],
+  },
+  {
+    id: '5',
+    chapter: '辽阔',
+    title: '风吹草低见爱意',
+    subtitle: '天地间的浪漫',
+    description: '广袤的草原上，蓝天白云作伴，骏马羊群相随。牵着你的手漫步在无边的绿野，仿佛世界只剩下我们两个人。在这天地之间，我许下诺言：愿与你策马奔腾，共赴人生每一场冒险。',
+    quote: '"陪你去看草原的风，让爱在天地间自由翱翔"',
+    images: [
+      '/images/daily/hulunbeier/WechatIMG1774.jpg',
+      '/images/daily/hulunbeier/WechatIMG1776.jpg',
+      '/images/daily/hulunbeier/WechatIMG1778.jpg',
+      '/images/daily/hulunbeier/WechatIMG1779.jpg',
+      '/images/daily/hulunbeier/WechatIMG1786.jpg',
+    ],
+  },
+  {
+    id: '6',
+    chapter: '誓约',
+    title: '紫禁城的誓言',
+    subtitle: '穿越时空的爱恋',
+    description: '漫步在红墙金瓦之下，六百年的历史沉淀为我们的爱情作证。你说喜欢这里的庄严与古朴，我说更喜欢有你相伴的每一步。愿我们的爱情，如这古老的宫殿般，历经岁月洗礼而愈发醇厚。',
+    quote: '"愿得一心人，白首不相离"',
+    images: [
+      '/images/daily/gugong/WechatIMG1794.jpg',
+      '/images/daily/gugong/WechatIMG1798.jpg',
+      '/images/daily/gugong/WechatIMG1827.jpg',
+      '/images/daily/gugong/WechatIMG1885.jpg',
+      '/images/daily/gugong/WechatIMG1887.jpg',
+      '/images/daily/gugong/WechatIMG1888.jpg',
+      '/images/daily/gugong/WechatIMG1889.jpg',
+    ],
+  },
+  {
+    id: '7',
+    chapter: '纯白',
+    title: '未名湖畔的初雪',
+    subtitle: '纯白色的童话',
+    description: '那年冬天，北京迎来了第一场雪。我们漫步在未名湖畔，看雪花纷纷扬扬地落下，染白了你的发梢。博雅塔在雪中静默，而你的笑容比这雪景更加动人。愿每年的初雪，都能与你共白头。',
+    quote: '"下雪了，想和你一直走，一不小心就到了白头"',
+    images: [
+      '/images/daily/pkusnow/WechatIMG1890.jpg',
+      '/images/daily/pkusnow/WechatIMG1891.jpg',
+      '/images/daily/pkusnow/WechatIMG1892.jpg',
+      '/images/daily/pkusnow/WechatIMG1894.jpg',
+      '/images/daily/pkusnow/WechatIMG1895.jpg',
+      '/images/daily/pkusnow/WechatIMG1896.jpg',
+    ],
+  },
+  {
+    id: '8',
+    chapter: '烟火',
+    title: '蜀地烟火气',
+    subtitle: '被幸福填满的胃',
+    description: '成都，一座来了就不想离开的城市。我们一起吃火锅、逛宽窄巷子、看大熊猫。辣得冒汗时你递来的纸巾，累了时你温暖的肩膀。最幸福的事，不过是和你一起品尝人间烟火，把日子过成诗。',
+    quote: '"和你在一起，平凡的日子也闪闪发光"',
+    images: [
+      '/images/daily/chengdu/WechatIMG1823.jpg',
+      '/images/daily/chengdu/WechatIMG1828.jpg',
+      '/images/daily/chengdu/WechatIMG1829.jpg',
+      '/images/daily/chengdu/WechatIMG1830.jpg',
+      '/images/daily/chengdu/WechatIMG1831.jpg',
+      '/images/daily/chengdu/WechatIMG1832.jpg',
+      '/images/daily/chengdu/WechatIMG1833.jpg',
+    ],
+  },
+  {
+    id: '17',
+    chapter: '岁月',
+    title: '时光里的我们',
+    subtitle: '平凡而温暖的日常',
+    description: '生活不只有波澜壮阔，更多的是柴米油盐的平淡与真实。这些年，我们一起走过的路，看过的风景，留下的每一张合影，都是时光赠予的最珍贵的礼物。',
+    quote: '"和你在一起的每一刻，都是好时光"',
+    images: [
+      '/images/daily/history/WechatIMG1811.jpg',
+      '/images/daily/history/WechatIMG1812.jpg',
+      '/images/daily/history/WechatIMG1813.jpg',
+    ],
+    year: 'Story',
+  },
+  {
+    id: '9',
+    chapter: '追梦',
+    title: '最后的香格里拉',
+    subtitle: '离天堂最近的地方',
+    description: '我偷偷告诉你，有一个地方叫做稻城，我要和你一起去。看蔚蓝的天空，看白色的雪山，看金黄的草地，看一场秋天的童话。那年秋天，我们终于来到了这里，梦想照进了现实，你也走进了我的心里。',
+    quote: '"有一个地方叫做稻城，我要和你一起去"',
+    images: [
+      '/images/daily/daochengyading/WechatIMG1836.jpg',
+      '/images/daily/daochengyading/WechatIMG1837.jpg',
+      '/images/daily/daochengyading/WechatIMG1838.jpg',
+      '/images/daily/daochengyading/WechatIMG1839.jpg',
+      '/images/daily/daochengyading/WechatIMG1840.jpg',
+    ],
+  },
+  {
+    id: '10',
+    chapter: '虔诚',
+    title: '高原上的格桑花',
+    subtitle: '民族风情 · 另一种美丽',
+    description: '穿上美丽的藏袍，仿佛穿越到了另一个时空。你说我像极了高原上盛放的格桑花，我说你是我心中永远的雪山之巅。那一刻，我们都是高原上最虔诚的信徒，信仰着彼此，信仰着爱情。',
+    quote: '"你是我眼中，最美的风景"',
+    images: [
+      '/images/daily/tibetan/WechatIMG1815.jpg',
+      '/images/daily/tibetan/WechatIMG1816.jpg',
+      '/images/daily/tibetan/WechatIMG1817.jpg',
+      '/images/daily/tibetan/WechatIMG1818.jpg',
+      '/images/daily/tibetan/WechatIMG1819.jpg',
+      '/images/daily/tibetan/WechatIMG1820.jpg',
+      '/images/daily/tibetan/WechatIMG1821.jpg',
+      '/images/daily/tibetan/WechatIMG1822.jpg',
+    ],
+  },
+  {
+    id: '11',
+    chapter: '栖居',
+    title: '西溪听风',
+    subtitle: '诗意栖居',
+    description: '在西溪的芦苇丛中，我们划着小船，听着鸟鸣，看着夕阳西下。水波荡漾，光影婆娑。这一刻，时光仿佛静止，世界只剩下我们两个人。这便是我向往的生活——诗意、宁静，有你相伴。',
+    quote: '"择一城终老，遇一人白首"',
+    images: [
+      '/images/daily/xixishidi/WechatIMG1850.jpg',
+      '/images/daily/xixishidi/WechatIMG1851.jpg',
+      '/images/daily/xixishidi/WechatIMG1852.jpg',
+      '/images/daily/xixishidi/WechatIMG1853.jpg',
+      '/images/daily/xixishidi/WechatIMG1854.jpg',
+      '/images/daily/xixishidi/WechatIMG1855.jpg',
+      '/images/daily/xixishidi/WechatIMG1856.jpg',
+      '/images/daily/xixishidi/WechatIMG1857.jpg',
+      '/images/daily/xixishidi/WechatIMG1858.jpg',
+      '/images/daily/xixishidi/WechatIMG1859.jpg',
+    ],
+  },
+  {
+    id: '12',
+    chapter: '牵挂',
+    title: '跨越山海的思念',
+    subtitle: '心在一起',
+    description: '有一段时间，我们相隔千里。屏幕那头的你，是我每天最期待的温暖。虽然不能相见，但每一次视频通话，每一条晚安消息，都让思念化作最深的羁绊。距离，让我们学会了更加珍惜彼此。',
+    quote: '"所爱隔山海，山海皆可平"',
+    images: [
+      '/images/daily/video/WechatIMG1870.jpg',
+      '/images/daily/video/WechatIMG1873.jpg',
+      '/images/daily/video/WechatIMG1871.jpg',
+    ],
+  },
+  {
+    id: '14',
+    chapter: '珍重',
+    title: '岁岁年年',
+    subtitle: '愿你永远是少年',
+    description: '每一年你的生日，我都绞尽脑汁准备惊喜。看着你吹灭蜡烛、许下心愿的样子，是我最幸福的时刻。亲爱的，往后余生的每一个生日，我都想陪在你身边，为你唱生日歌，陪你吃蛋糕，看你笑靥如花。',
+    quote: '"陪你度过每一个特别的日子，是我最大的幸福"',
+    images: [
+      '/images/daily/birthday/WechatIMG1802.jpg',
+      '/images/daily/birthday/WechatIMG1803.jpg',
+      '/images/daily/birthday/WechatIMG1804.jpg',
+      '/images/daily/birthday/WechatIMG1805.jpg',
+      '/images/daily/birthday/WechatIMG1806.jpg',
+      '/images/daily/birthday/WechatIMG1843.jpg',
+      '/images/daily/birthday/WechatIMG1844.jpg',
+      '/images/daily/birthday/WechatIMG1845.jpg',
+      '/images/daily/birthday/WechatIMG1846.jpg',
+      '/images/daily/birthday/WechatIMG1847.jpg',
+      '/images/daily/birthday/WechatIMG1848.jpg',
+    ],
+  },
+  {
+    id: '15',
+    chapter: '三餐',
+    title: '美食与爱',
+    subtitle: '一起吃饭',
+    description: '都说爱一个人，就是想和他一起吃很多很多顿饭。我们一起尝遍人间美味，分享每一道喜欢的菜。你夹菜给我，我递水给你，平凡的餐桌上，满是爱的味道。无论吃什么，对面坐着的是你，就是最顶级的美味。',
+    quote: '"一日三餐四季，都想与你共度"',
+    images: [
+      '/images/daily/food/WechatIMG1797.jpg',
+      '/images/daily/food/WechatIMG1860.jpg',
+      '/images/daily/food/WechatIMG1861.jpg',
+      '/images/daily/food/WechatIMG1862.jpg',
+      '/images/daily/food/WechatIMG1866.jpg',
+      '/images/daily/restaurant/WechatIMG1834.jpg',
+      '/images/daily/restaurant/WechatIMG1835.jpg',
+    ],
+  },
+  {
+    id: '16',
+    chapter: '永恒',
+    title: '执子之手',
+    subtitle: '我们结婚吧',
+    description: '从青涩的高中生，到如今携手并肩。我们一起走过春夏秋冬，看过山川湖海。如今，我想牵起你的手，走过人生的每一个春秋。不求轰轰烈烈，只愿岁月静好，与你白头偕老。',
+    quote: '"死生契阔，与子成说。执子之手，与子偕老。"',
+    images: [
+      '/images/daily/hands/WechatIMG1782.jpg',
+      '/images/daily/hands/WechatIMG1793.jpg',
+      '/images/daily/hands/WechatIMG1799.jpg',
+      '/images/daily/hands/WechatIMG1801.jpg',
+      '/images/daily/hands/WechatIMG1849.jpg',
+      '/images/daily/hands/WechatIMG1874.jpg',
+      '/images/daily/hands/WechatIMG1875.jpg',
+    ],
+  },
+];
+
+// 保留原有的 timelineEvents 用于兼容
+export const timelineEvents: TimelineEvent[] = storySlides.map((slide, index) => {
+  const parts = slide.subtitle.split(' · ');
+  return {
+    id: slide.id,
+    date: parts.length > 1 ? parts[0] : slide.year || slide.subtitle, // 增加更安全的 Fallback 逻辑
+    title: slide.title,
+    description: slide.description,
+    image: slide.images[0],
+    side: index % 2 === 0 ? 'left' : 'right',
+  };
+});
