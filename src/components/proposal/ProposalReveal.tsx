@@ -85,7 +85,7 @@ const ProposalReveal = () => {
         transition={{ type: 'spring', duration: 1 }}
       >
         <img
-          src="/images/hero/poster.jpg"
+          src="/images/hero/poster.webp"
           alt="我们"
           className="w-full h-full object-cover"
         />
