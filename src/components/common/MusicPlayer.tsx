@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Howl } from 'howler';
 import { useAppStore } from '../../stores/appStore';
+import { assetUrl } from '../../utils/assets';
 
 const MusicPlayer = () => {
   const { isMusicPlaying, musicVolume, toggleMusic, setVolume } = useAppStore();
@@ -18,7 +19,7 @@ const MusicPlayer = () => {
     howlInitializedRef.current = true;
 
     soundRef.current = new Howl({
-      src: ['/music/background.mp3'],
+      src: [assetUrl('/music/background.mp3')],
       loop: true,
       volume: musicVolume,
       onload: () => {

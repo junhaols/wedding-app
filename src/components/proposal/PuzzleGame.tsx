@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { assetUrl } from '../../utils/assets';
 
 interface PuzzleGameProps {
   onComplete: () => void;
@@ -114,7 +115,7 @@ const PuzzleGame = ({ onComplete }: PuzzleGameProps) => {
         {/* 参考图（小图） */}
         <div className="absolute top-4 right-4 w-20 h-20 rounded-lg overflow-hidden opacity-50 z-10 border border-white/20">
           <img
-            src="/images/gallery/P012.webp"
+            src={assetUrl('/images/gallery/P012.webp')}
             alt="参考图"
             className="w-full h-full object-cover"
           />
@@ -140,7 +141,7 @@ const PuzzleGame = ({ onComplete }: PuzzleGameProps) => {
               <div
                 className="w-full h-full bg-cover bg-center"
                 style={{
-                  backgroundImage: `url('/images/gallery/P012.webp')`,
+                  backgroundImage: `url('${assetUrl('/images/gallery/P012.webp')}')`,
                   backgroundPosition: `${(tile.id % 3) * 50}% ${Math.floor(tile.id / 3) * 50}%`,
                   backgroundSize: '300%',
                 }}

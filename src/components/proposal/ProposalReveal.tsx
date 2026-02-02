@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { proposalText, proposalQuestion, proposalSignature } from '../../data/quizData';
+import { assetUrl } from '../../utils/assets';
 
 const ProposalReveal = () => {
   const [stage, setStage] = useState(0);
@@ -85,7 +86,7 @@ const ProposalReveal = () => {
         transition={{ type: 'spring', duration: 1 }}
       >
         <img
-          src="/images/hero/poster.webp"
+          src={assetUrl('/images/hero/poster.webp')}
           alt="我们"
           className="w-full h-full object-cover"
         />
