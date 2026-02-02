@@ -210,7 +210,7 @@ export const storySlides: StorySlide[] = [
       assetUrl('/images/daily/xixishidi/WechatIMG1856.webp'),
       assetUrl('/images/daily/xixishidi/WechatIMG1857.webp'),
       assetUrl('/images/daily/xixishidi/WechatIMG1858.webp'),
-      assetUrl('/images/daily/xixishidi/WechatIMG1859.webp'),
+      assetUrl('/images/daily/games/WechatIMG1859.webp'),
     ],
   },
   {
