@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QuizChallenge from '../components/proposal/QuizChallenge';
 import PuzzleGame from '../components/proposal/PuzzleGame';
@@ -26,6 +26,20 @@ const ProposalPage = () => {
   });
 
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showSkip, setShowSkip] = useState(false);
+  const skipClicksRef = useRef<number[]>([]);
+
+  // 彩蛋：连续快速点击页面底部5次才显示跳过按钮
+  const handleBottomClick = useCallback(() => {
+    const now = Date.now();
+    skipClicksRef.current.push(now);
+    // 只保留最近2秒内的点击
+    skipClicksRef.current = skipClicksRef.current.filter(t => now - t < 2000);
+    if (skipClicksRef.current.length >= 5) {
+      setShowSkip(true);
+      skipClicksRef.current = [];
+    }
+  }, []);
 
   const handleStageComplete = (completedStage: Stage) => {
     setIsTransitioning(true);
@@ -169,32 +183,39 @@ const ProposalPage = () => {
           )}
         </AnimatePresence>
 
-        {/* 跳过按钮（开发调试用，正式版可删除） */}
+        {/* 彩蛋跳过按钮：连续快速点击底部5次才显示 */}
         {currentStage !== 'proposal' && (
-          <motion.div
-            className="text-center mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-          >
-            <button
-              className="text-white/30 text-sm hover:text-white/50 transition-colors"
-              onClick={() => {
-                if (currentStage === 'quiz') {
-                  completeStage('quizCompleted');
-                  setCurrentStage('puzzle');
-                } else if (currentStage === 'puzzle') {
-                  completeStage('puzzleCompleted');
-                  setCurrentStage('letter');
-                } else if (currentStage === 'letter') {
-                  completeStage('letterCompleted');
-                  setCurrentStage('proposal');
-                }
-              }}
-            >
-              跳过此关 →
-            </button>
-          </motion.div>
+          <div className="text-center mt-12">
+            <div
+              className="h-10 cursor-default select-none"
+              onClick={handleBottomClick}
+            />
+            <AnimatePresence>
+              {showSkip && (
+                <motion.button
+                  className="text-white/30 text-sm hover:text-white/50 transition-colors"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => {
+                    if (currentStage === 'quiz') {
+                      completeStage('quizCompleted');
+                      setCurrentStage('puzzle');
+                    } else if (currentStage === 'puzzle') {
+                      completeStage('puzzleCompleted');
+                      setCurrentStage('letter');
+                    } else if (currentStage === 'letter') {
+                      completeStage('letterCompleted');
+                      setCurrentStage('proposal');
+                    }
+                    setShowSkip(false);
+                  }}
+                >
+                  跳过此关 →
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
         )}
       </div>
     </div>

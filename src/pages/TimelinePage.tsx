@@ -103,6 +103,7 @@ const StoryNode = ({ slide, index }: { slide: typeof storySlides[0], index: numb
                 <img 
                   src={slide.images[0]} 
                   alt={slide.title}
+                  loading="lazy"
                   className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 ${
                     isFateChapter ? 'sepia-[0.3] contrast-125' : '' // 巧克力图片增加复古感
                   }`} 
@@ -149,7 +150,7 @@ const StoryNode = ({ slide, index }: { slide: typeof storySlides[0], index: numb
               animate={{ y: [0, -12, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             >
-              <img src={slide.images[1]} alt="" className="w-full h-full object-cover" />
+              <img src={slide.images[1]} alt="" loading="lazy" className="w-full h-full object-cover" />
             </motion.div>
           )}
         </motion.div>
@@ -206,6 +207,7 @@ const MobileStoryNode = ({ slide }: { slide: typeof storySlides[0], index: numbe
             <img 
               src={slide.images[0]} 
               alt={slide.title} 
+              loading="lazy"
               className={`w-full h-full object-cover ${isFateChapter ? 'sepia-[0.3] contrast-125' : ''}`}
             />
           ) : (

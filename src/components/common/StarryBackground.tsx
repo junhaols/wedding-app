@@ -31,7 +31,7 @@ const StarryBackground = () => {
     fpsLimit: 60,
     particles: {
       number: {
-        value: 200,
+        value: 120, // 优化性能：减少粒子数量
         density: {
           enable: true,
         },

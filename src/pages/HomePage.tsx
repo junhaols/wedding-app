@@ -77,6 +77,7 @@ const HomePage = () => {
             <img
               src={currentPhoto}
               alt=""
+              loading="lazy"
               className="w-full h-full object-cover object-center filter saturate-[1.1] contrast-[1.1]" // 略微增强图片色彩
             />
           </motion.div>
@@ -229,8 +230,8 @@ const HomePage = () => {
       {/* 底部渐变衔接 */}
       <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-night-900 to-transparent pointer-events-none" />
 
-      {/* 飘落的花瓣/星星效果 */}
-      {[...Array(25)].map((_, i) => (
+      {/* 飘落的花瓣/星星效果 - 优化性能：减少粒子数量，增加动画持续时间 */}
+      {[...Array(15)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute pointer-events-none"
@@ -248,9 +249,9 @@ const HomePage = () => {
             opacity: [0, 1, 0],
           }}
           transition={{
-            duration: Math.random() * 15 + 10,
+            duration: Math.random() * 20 + 15, // 增加动画持续时间，补偿视觉密度
             repeat: Infinity,
-            delay: Math.random() * 20,
+            delay: Math.random() * 25,
             ease: 'linear',
           }}
         >

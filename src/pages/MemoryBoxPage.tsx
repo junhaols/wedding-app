@@ -109,8 +109,8 @@ export default function MemoryBoxPage() {
       
       {/* 动态星空背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* 星星 */}
-        {[...Array(30)].map((_, i) => (
+        {/* 星星 - 优化性能：减少数量 */}
+        {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-white"
@@ -133,8 +133,8 @@ export default function MemoryBoxPage() {
           />
         ))}
         
-        {/* 漂浮爱心 */}
-        {[...Array(15)].map((_, i) => (
+        {/* 漂浮爱心 - 优化性能：减少数量 */}
+        {[...Array(10)].map((_, i) => (
           <motion.div
             key={`heart-${i}`}
             className="absolute text-love-pink/20"

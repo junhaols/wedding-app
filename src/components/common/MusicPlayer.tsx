@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Howl } from 'howler';
 import { useAppStore } from '../../stores/appStore';
@@ -10,9 +10,13 @@ const MusicPlayer = () => {
   const [duration, setDuration] = useState(0);
   const soundRef = useRef<Howl | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const howlInitializedRef = useRef(false);
 
-  useEffect(() => {
-    // 初始化音频
+  // 延迟初始化 Howl（首次点击播放才创建）
+  const initHowl = useCallback(() => {
+    if (howlInitializedRef.current || soundRef.current) return;
+    howlInitializedRef.current = true;
+
     soundRef.current = new Howl({
       src: ['/music/background.mp3'],
       loop: true,
@@ -21,7 +25,6 @@ const MusicPlayer = () => {
         setDuration(soundRef.current?.duration() || 0);
       },
       onplay: () => {
-        // 更新播放进度
         intervalRef.current = window.setInterval(() => {
           setCurrentTime(soundRef.current?.seek() as number || 0);
         }, 1000);
@@ -38,7 +41,10 @@ const MusicPlayer = () => {
         setCurrentTime(0);
       },
     });
+  }, [musicVolume]);
 
+  // 清理
+  useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -47,21 +53,40 @@ const MusicPlayer = () => {
     };
   }, []);
 
+  // 音量同步
   useEffect(() => {
     if (soundRef.current) {
       soundRef.current.volume(musicVolume);
     }
   }, [musicVolume]);
 
+  // 播放状态同步
   useEffect(() => {
-    if (soundRef.current) {
-      if (isMusicPlaying) {
-        soundRef.current.play();
-      } else {
-        soundRef.current.pause();
-      }
+    if (!soundRef.current) return;
+    if (isMusicPlaying) {
+      soundRef.current.play();
+    } else {
+      soundRef.current.pause();
     }
   }, [isMusicPlaying]);
+
+  const handleToggle = useCallback(() => {
+    // 首次点击时初始化 Howl
+    if (!howlInitializedRef.current) {
+      initHowl();
+      // 初始化后需要等 Howl 准备好再播放
+      toggleMusic();
+      // 延迟一帧让 state 更新后触发 useEffect
+      requestAnimationFrame(() => {
+        if (soundRef.current && !soundRef.current.playing()) {
+          soundRef.current.play();
+        }
+      });
+    } else {
+      toggleMusic();
+    }
+    if (!isExpanded) setIsExpanded(true);
+  }, [initHowl, toggleMusic, isExpanded]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -126,10 +151,7 @@ const MusicPlayer = () => {
       {/* 播放按钮 */}
       <motion.button
         className="w-14 h-14 rounded-full glass flex items-center justify-center group"
-        onClick={() => {
-          toggleMusic();
-          if (!isExpanded) setIsExpanded(true);
-        }}
+        onClick={handleToggle}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
         whileHover={{ scale: 1.1 }}
