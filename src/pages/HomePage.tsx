@@ -17,9 +17,9 @@ const HomePage = () => {
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setShowTitle(true), 500),
-      setTimeout(() => setShowSubtitle(true), 1500),
-      setTimeout(() => setShowButton(true), 2500),
+      setTimeout(() => setShowTitle(true), 300),
+      setTimeout(() => setShowSubtitle(true), 800),
+      setTimeout(() => setShowButton(true), 1300),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -216,12 +216,12 @@ const HomePage = () => {
 
         {/* 滚动提示 */}
         <motion.div
-          className="absolute -bottom-32 left-1/2 -translate-x-1/2 text-white/30"
-          animate={{ y: [0, 10, 0], opacity: [0.3, 0.6, 0.3] }}
+          className="absolute -bottom-32 left-1/2 -translate-x-1/2 text-white/50"
+          animate={{ y: [0, 10, 0], opacity: [0.5, 0.8, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           <div className="flex flex-col items-center gap-2">
-            <span className="text-xs uppercase tracking-[0.2em] font-light">Scroll Down</span>
+            <span className="text-sm uppercase tracking-[0.2em] font-light">Scroll Down</span>
             <div className="w-[1px] h-12 bg-gradient-to-b from-white/0 via-white/50 to-white/0" />
           </div>
         </motion.div>

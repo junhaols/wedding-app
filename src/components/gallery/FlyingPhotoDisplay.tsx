@@ -334,7 +334,7 @@ const FlyingPhotoDisplay = ({
             }}
           >
             <div
-              className="relative cursor-pointer bg-white p-2 rounded-sm transition-transform duration-200 hover:scale-110 hover:z-50"
+              className="relative cursor-pointer bg-white/90 p-1.5 rounded-sm transition-transform duration-200 hover:scale-110 hover:z-50"
               style={{
                 width: 150,
                 transform: `rotate(${photo.targetRotate}deg) scale(${photo.targetScale})`,

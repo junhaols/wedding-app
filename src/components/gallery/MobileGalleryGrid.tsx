@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GalleryPhoto, PhotoCategory } from '../../types';
+import ImageWithSkeleton from '../common/ImageWithSkeleton';
 
 interface MobileGalleryGridProps {
   categories: PhotoCategory[];
@@ -89,11 +90,12 @@ export const MobileGalleryGrid = ({ categories, onSelect }: MobileGalleryGridPro
             >
               {/* 照片容器 */}
               <div className="aspect-[3/4] overflow-hidden rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-                <img
+                <ImageWithSkeleton
                   src={photo.src}
                   alt={photo.alt}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  wrapperClassName="w-full h-full"
                 />
                 
                 {/* 悬浮遮罩 */}

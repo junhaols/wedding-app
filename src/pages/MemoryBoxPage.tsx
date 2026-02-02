@@ -187,8 +187,8 @@ export default function MemoryBoxPage() {
           onClick={() => setOpenMode('manual')}
           className={`px-5 py-2 rounded-full text-sm backdrop-blur-md transition-all duration-300 border ${
             openMode === 'manual'
-              ? 'bg-love-pink/20 border-love-pink/50 text-love-pink shadow-[0_0_15px_rgba(255,105,180,0.3)]'
-              : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70'
+              ? 'bg-gradient-to-r from-love-pink/20 to-love-rose/20 border-love-pink/40 text-love-pink shadow-[0_0_15px_rgba(255,105,180,0.3)]'
+              : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white/70 hover:bg-white/10'
           }`}
         >
           ✨ 手动开启
@@ -197,8 +197,8 @@ export default function MemoryBoxPage() {
           onClick={() => setOpenMode('auto')}
           className={`px-5 py-2 rounded-full text-sm backdrop-blur-md transition-all duration-300 border ${
             openMode === 'auto'
-              ? 'bg-star-gold/20 border-star-gold/50 text-star-gold shadow-[0_0_15px_rgba(255,215,0,0.2)]'
-              : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70'
+              ? 'bg-gradient-to-r from-love-pink/20 to-love-rose/20 border-love-pink/40 text-love-pink shadow-[0_0_15px_rgba(255,105,180,0.3)]'
+              : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white/70 hover:bg-white/10'
           }`}
         >
           ⚡ 自动播放

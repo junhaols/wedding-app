@@ -113,11 +113,10 @@ body {
 
 /* 玻璃态效果 (Glassmorphism) */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
@@ -143,6 +142,12 @@ body {
 }
 
 /* ---------------- 动画定义 ---------------- */
+
+/* Shimmer 扫光 (用于图片 Skeleton) */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
 /* 星星闪烁 */
 @keyframes twinkle {

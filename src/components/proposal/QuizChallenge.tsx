@@ -74,7 +74,7 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentQuestion}
-          className="glass rounded-3xl p-6 md:p-8"
+          className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-6 md:p-8"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
@@ -101,10 +101,10 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
                         ? 'bg-green-500/20 border-2 border-green-500'
                         : isSelected
                           ? 'bg-red-500/20 border-2 border-red-500'
-                          : 'bg-white/5 border-2 border-transparent'
+                          : 'bg-white/[0.06] backdrop-blur-sm border-2 border-white/[0.08]'
                       : isSelected
                         ? 'bg-star-gold/20 border-2 border-star-gold'
-                        : 'bg-white/5 border-2 border-transparent hover:bg-white/10 hover:border-white/20'
+                        : 'bg-white/[0.06] backdrop-blur-sm border-2 border-white/[0.08] hover:bg-white/[0.12] hover:border-love-pink/30'
                   }`}
                   onClick={() => !showResult && handleAnswer(index)}
                   disabled={showResult}

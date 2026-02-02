@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { GalleryPhoto } from '../../types';
+import ImageWithSkeleton from '../common/ImageWithSkeleton';
 
 interface Carousel3DLeftProps {
   photos: GalleryPhoto[];
@@ -78,11 +79,12 @@ const Carousel3DLeft = ({
                   onClick={() => onSelect(photo)}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <div className="aspect-[3/4] overflow-hidden">
-                    <img
+                  <div className="aspect-[3/4] overflow-hidden bg-night-800">
+                    <ImageWithSkeleton
                       src={photo.src}
                       alt={photo.alt}
                       className="w-full h-full object-cover"
+                      wrapperClassName="w-full h-full"
                       draggable={false}
                     />
                   </div>
