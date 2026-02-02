@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import StarryBackground from './components/common/StarryBackground';
 import Navigation from './components/common/Navigation';
@@ -27,7 +27,7 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter basename="/wedding-app">
       {/* 星空背景 */}
       <StarryBackground />
 
@@ -39,7 +39,7 @@ function App() {
 
       {/* 页面路由 */}
       <AnimatedRoutes />
-    </Router>
+    </BrowserRouter>
   );
 }
 
