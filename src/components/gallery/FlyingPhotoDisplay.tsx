@@ -337,20 +337,20 @@ const FlyingPhotoDisplay = ({
               className="relative cursor-pointer bg-white p-2 rounded-sm transition-transform duration-200 hover:scale-110 hover:z-50"
               style={{
                 width: 150,
-                height: 150 * 1.33 + 16,
                 transform: `rotate(${photo.targetRotate}deg) scale(${photo.targetScale})`,
                 boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,105,180,0.15)',
               }}
               onClick={() => onSelect(photo)}
             >
-              <img
-                src={photo.src}
-                alt={photo.alt}
-                className="w-full h-full object-cover"
-                style={{ width: 150 - 16, height: (150 - 16) * 1.33 }}
-                draggable={false}
-                loading="lazy"
-              />
+              <div className="aspect-[3/4] overflow-hidden">
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                  loading="lazy"
+                />
+              </div>
             </div>
           </motion.div>
         ))}

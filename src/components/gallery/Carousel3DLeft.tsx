@@ -78,7 +78,7 @@ const Carousel3DLeft = ({
                   onClick={() => onSelect(photo)}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <div className="aspect-[3/4] overflow-hidden bg-gray-200">
+                  <div className="aspect-[3/4] overflow-hidden">
                     <img
                       src={photo.src}
                       alt={photo.alt}
@@ -98,7 +98,7 @@ const Carousel3DLeft = ({
                     WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 50%)',
                   }}
                 >
-                  <div className="aspect-[3/4] overflow-hidden bg-gray-200">
+                  <div className="aspect-[3/4] overflow-hidden">
                     <img src={photo.src} alt="" className="w-full h-full object-cover" draggable={false} />
                   </div>
                 </div>
