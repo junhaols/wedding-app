@@ -39,7 +39,7 @@ export const quizQuestions: QuizQuestion[] = [
     options: ['4年', '5年', '6年', '7年'],
     correctIndex: 1,
     hint: '从2019年开始计算哦~',
-    loveMessage: '五年多的时光，感谢你一直陪伴在我身边',
+    loveMessage: '七年的时光，感谢你一直陪伴在我身边',
   },
 ];
 
@@ -47,7 +47,7 @@ export const proposalText = `亲爱的思宝：
 
 从高中校园的初次相遇
 到北京城里的相依相伴
-五年多的时光
+七年的时光
 在你身边，每一天都是诗
 
 你是我青春里最美的风景
