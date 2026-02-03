@@ -645,30 +645,40 @@ const ProposalReveal = () => {
         {phase === 'ring' && <RingBox onOpen={handleRingOpen} />}
       </AnimatePresence>
 
-      {/* Phase 5: 求婚问题 */}
+      {/* Phase 5: 求婚问题 —— 全屏居中，大字体 */}
       <AnimatePresence>
         {phase === 'question' && !answered && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 100 }}
+            className="fixed inset-0 z-30 flex flex-col items-center justify-center px-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
           >
-            <motion.h2
-              className="text-3xl md:text-4xl lg:text-5xl font-elegant mb-8"
-              style={{
-                background: 'linear-gradient(135deg, #ffd700, #ff69b4, #ffd700)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
-                backgroundSize: '200% 200%',
-              }}
-              animate={{
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{ duration: 4, repeat: Infinity }}
+            {/* 深色遮罩背景 */}
+            <div className="absolute inset-0 bg-night-900/80 backdrop-blur-sm" />
+
+            <motion.div
+              className="relative z-10 flex flex-col items-center"
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 80, delay: 0.3 }}
             >
-              {proposalQuestion}
-            </motion.h2>
+              <motion.h2
+                className="text-4xl md:text-6xl lg:text-7xl font-elegant mb-12 text-center leading-tight"
+                style={{
+                  background: 'linear-gradient(135deg, #ffd700, #ff69b4, #ffd700)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  color: 'transparent',
+                  backgroundSize: '200% 200%',
+                }}
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                {proposalQuestion}
+              </motion.h2>
 
             <motion.button
               className="group relative px-14 py-5 rounded-full text-white text-xl font-bold overflow-hidden"
@@ -719,6 +729,7 @@ const ProposalReveal = () => {
                 </motion.span>
               </span>
             </motion.button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
