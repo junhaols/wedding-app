@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { proposalText, proposalQuestion, proposalSignature } from '../../data/quizData';
 import { assetUrl } from '../../utils/assets';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 
 // 将求婚文案按换行拆成段落
 const paragraphs = proposalText
@@ -10,75 +11,153 @@ const paragraphs = proposalText
   .map((p) => p.trim())
   .filter(Boolean);
 
-// 花瓣/星光粒子
-const Particle = ({ delay, type }: { delay: number; type: 'petal' | 'star' }) => {
-  const left = Math.random() * 100;
-  const size = type === 'petal' ? Math.random() * 16 + 12 : Math.random() * 4 + 2;
-  const duration = Math.random() * 6 + 8;
+// 每段文字的展示节奏（毫秒）：短句快，长句慢，高潮前停顿
+const paragraphDelays = [2200, 2000, 2000, 2800];
 
-  if (type === 'star') {
-    return (
-      <motion.div
-        className="fixed pointer-events-none rounded-full bg-star-gold"
-        style={{
-          left: `${left}%`,
-          top: -10,
-          width: size,
-          height: size,
-        }}
-        animate={{
-          y: ['0vh', '105vh'],
-          x: [0, Math.sin(left) * 60],
-          opacity: [0, 1, 1, 0],
-        }}
-        transition={{
-          duration,
-          repeat: Infinity,
-          delay,
-          ease: 'linear',
-        }}
-      />
-    );
+// 触觉反馈（移动端振动）
+const haptic = (pattern: number | number[]) => {
+  try {
+    navigator?.vibrate?.(pattern);
+  } catch {
+    // 不支持振动的设备静默忽略
   }
-
-  return (
-    <motion.div
-      className="fixed pointer-events-none"
-      style={{
-        left: `${left}%`,
-        top: -20,
-        fontSize: size,
-      }}
-      animate={{
-        y: ['0vh', '105vh'],
-        x: [0, Math.random() * 80 - 40],
-        rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-        opacity: [0, 0.8, 0.8, 0],
-      }}
-      transition={{
-        duration,
-        repeat: Infinity,
-        delay,
-        ease: 'linear',
-      }}
-    >
-      {['🌸', '🌹', '🪷', '💮', '🏵️'][Math.floor(Math.random() * 5)]}
-    </motion.div>
-  );
 };
 
-// 心形星座连线动画
-const HeartConstellation = ({ onComplete }: { onComplete: () => void }) => {
-  // 心形参数方程生成点
-  const points = Array.from({ length: 20 }, (_, i) => {
-    const t = (i / 20) * 2 * Math.PI;
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    return { x: x * 8 + 200, y: y * 8 + 200 };
-  });
+// ---- 预计算的粒子数据（避免渲染时 Math.random）----
+interface StarParticleData {
+  left: number;
+  size: number;
+  duration: number;
+}
+interface PetalParticleData {
+  left: number;
+  size: number;
+  duration: number;
+  xDrift: number;
+  direction: 1 | -1;
+  emoji: string;
+}
+interface FallingData {
+  left: number;
+  fontSize: number;
+  yDrift: number;
+  duration: number;
+  delay: number;
+  emoji: string;
+}
+
+const PETAL_EMOJIS = ['🌸', '🌹', '🪷', '💮', '🏵️'];
+const FALLING_EMOJIS = ['❤️', '💕', '🌹', '💖', '🌸', '💗', '✨'];
+
+function generateStarData(count: number): StarParticleData[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    size: Math.random() * 4 + 2,
+    duration: Math.random() * 6 + 8,
+  }));
+}
+
+function generatePetalData(count: number): PetalParticleData[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    size: Math.random() * 16 + 12,
+    duration: Math.random() * 6 + 8,
+    xDrift: Math.random() * 80 - 40,
+    direction: (Math.random() > 0.5 ? 1 : -1) as 1 | -1,
+    emoji: PETAL_EMOJIS[Math.floor(Math.random() * PETAL_EMOJIS.length)],
+  }));
+}
+
+function generateFallingData(count: number): FallingData[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    fontSize: Math.random() * 18 + 14,
+    yDrift: Math.random() * 100 - 50,
+    duration: Math.random() * 5 + 6,
+    delay: Math.random() * 4,
+    emoji: FALLING_EMOJIS[Math.floor(Math.random() * FALLING_EMOJIS.length)],
+  }));
+}
+
+// ---- 花瓣/星光粒子（使用预计算数据）----
+const StarParticle = memo(({ data, delay }: { data: StarParticleData; delay: number }) => (
+  <motion.div
+    className="fixed pointer-events-none rounded-full bg-star-gold"
+    style={{
+      left: `${data.left}%`,
+      top: -10,
+      width: data.size,
+      height: data.size,
+    }}
+    animate={{
+      y: ['0vh', '105vh'],
+      x: [0, Math.sin(data.left) * 60],
+      opacity: [0, 1, 1, 0],
+    }}
+    transition={{
+      duration: data.duration,
+      repeat: Infinity,
+      delay,
+      ease: 'linear',
+    }}
+  />
+));
+
+const PetalParticle = memo(({ data, delay }: { data: PetalParticleData; delay: number }) => (
+  <motion.div
+    className="fixed pointer-events-none"
+    style={{
+      left: `${data.left}%`,
+      top: -20,
+      fontSize: data.size,
+    }}
+    animate={{
+      y: ['0vh', '105vh'],
+      x: [0, data.xDrift],
+      rotate: [0, 360 * data.direction],
+      opacity: [0, 0.8, 0.8, 0],
+    }}
+    transition={{
+      duration: data.duration,
+      repeat: Infinity,
+      delay,
+      ease: 'linear',
+    }}
+  >
+    {data.emoji}
+  </motion.div>
+));
+
+// ---- 心形星座连线动画（增强版）----
+const HeartConstellation = memo(({ onComplete }: { onComplete: () => void }) => {
+  // 心形参数方程生成点 —— 增加到 28 个点让心形更圆润
+  const points = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => {
+        const t = (i / 28) * 2 * Math.PI;
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        return { x: x * 8 + 200, y: y * 8 + 200 };
+      }),
+    []
+  );
+
+  // 跨点连线（增加星座感）
+  const crossLines = useMemo(
+    () => [
+      [0, 14],
+      [4, 18],
+      [7, 21],
+      [10, 24],
+      [3, 25],
+      [6, 22],
+    ],
+    []
+  );
 
   useEffect(() => {
-    const timer = setTimeout(onComplete, 4000);
+    haptic(100);
+    const timer = setTimeout(onComplete, 4500);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -87,10 +166,40 @@ const HeartConstellation = ({ onComplete }: { onComplete: () => void }) => {
       className="flex items-center justify-center min-h-[60vh]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.5, transition: { duration: 0.8 } }}
+      exit={{ opacity: 0, scale: 1.3, filter: 'blur(8px)', transition: { duration: 0.8 } }}
     >
       <svg width="400" height="400" viewBox="0 0 400 400" className="max-w-[80vw]">
-        {/* 连线 */}
+        <defs>
+          <radialGradient id="heartGlow">
+            <stop offset="0%" stopColor="rgba(255,105,180,0.5)" />
+            <stop offset="50%" stopColor="rgba(255,105,180,0.15)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+          <radialGradient id="starGlow">
+            <stop offset="0%" stopColor="rgba(255,215,0,0.9)" />
+            <stop offset="100%" stopColor="rgba(255,215,0,0)" />
+          </radialGradient>
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* 中心发光（更大更柔和） */}
+        <motion.circle
+          cx="200"
+          cy="180"
+          r="90"
+          fill="url(#heartGlow)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.6, 0.3] }}
+          transition={{ duration: 2.5, delay: 2 }}
+        />
+
+        {/* 主连线 */}
         {points.map((point, i) => {
           const next = points[(i + 1) % points.length];
           return (
@@ -101,52 +210,81 @@ const HeartConstellation = ({ onComplete }: { onComplete: () => void }) => {
               x2={next.x}
               y2={next.y}
               stroke="rgba(255,182,193,0.6)"
-              strokeWidth="1"
+              strokeWidth="1.5"
+              filter="url(#softGlow)"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.15, delay: i * 0.12 + 0.5 }}
+              transition={{ duration: 0.12, delay: i * 0.1 + 0.4 }}
             />
           );
         })}
-        {/* 星点 */}
-        {points.map((point, i) => (
-          <motion.circle
-            key={`star-${i}`}
-            cx={point.x}
-            cy={point.y}
-            r="4"
-            fill="#ffd700"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{
-              scale: [0, 1.5, 1],
-              opacity: [0, 1, 0.9],
-            }}
-            transition={{ duration: 0.5, delay: i * 0.12 }}
+
+        {/* 跨点连线（星座风格） */}
+        {crossLines.map(([a, b], i) => (
+          <motion.line
+            key={`cross-${i}`}
+            x1={points[a].x}
+            y1={points[a].y}
+            x2={points[b].x}
+            y2={points[b].y}
+            stroke="rgba(255,215,0,0.2)"
+            strokeWidth="0.8"
+            strokeDasharray="4 4"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 2.8 + i * 0.15 }}
           />
         ))}
-        {/* 中心发光 */}
-        <motion.circle
-          cx="200"
-          cy="180"
-          r="60"
-          fill="url(#heartGlow)"
+
+        {/* 星点（更大的外发光） */}
+        {points.map((point, i) => (
+          <g key={`star-${i}`}>
+            <motion.circle
+              cx={point.x}
+              cy={point.y}
+              r="8"
+              fill="url(#starGlow)"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0, 1.2, 0.8], opacity: [0, 0.5, 0.3] }}
+              transition={{ duration: 0.6, delay: i * 0.1 }}
+            />
+            <motion.circle
+              cx={point.x}
+              cy={point.y}
+              r="3.5"
+              fill="#ffd700"
+              filter="url(#softGlow)"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: [0, 1.5, 1],
+                opacity: [0, 1, 0.9],
+              }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            />
+          </g>
+        ))}
+
+        {/* 中心文字 */}
+        <motion.text
+          x="200"
+          y="190"
+          textAnchor="middle"
+          fill="rgba(255,182,193,0.8)"
+          fontSize="16"
+          fontFamily="'Ma Shan Zheng', cursive"
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.4, 0.2] }}
-          transition={{ duration: 2, delay: 2.5 }}
-        />
-        <defs>
-          <radialGradient id="heartGlow">
-            <stop offset="0%" stopColor="rgba(255,105,180,0.4)" />
-            <stop offset="100%" stopColor="transparent" />
-          </radialGradient>
-        </defs>
+          animate={{ opacity: [0, 1] }}
+          transition={{ delay: 3.5, duration: 0.8 }}
+        >
+          ❤
+        </motion.text>
       </svg>
     </motion.div>
   );
-};
+});
 
-// 宝丽来相框照片
-const PolaroidPhoto = () => (
+// ---- 宝丽来相框照片 ----
+const PolaroidPhoto = memo(() => (
   <motion.div
     className="relative mx-auto mb-10 w-56 md:w-72"
     initial={{ opacity: 0, y: 40, rotateZ: -3 }}
@@ -175,14 +313,15 @@ const PolaroidPhoto = () => (
       </motion.p>
     </div>
   </motion.div>
-);
+));
 
-// 戒指盒动画
-const RingBox = ({ onOpen }: { onOpen: () => void }) => {
+// ---- 戒指盒动画（增强 3D） ----
+const RingBox = memo(({ onOpen }: { onOpen: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOpen = () => {
     setIsOpen(true);
+    haptic([50, 50, 100]); // 短-短-长振动
     setTimeout(onOpen, 1500);
   };
 
@@ -192,15 +331,24 @@ const RingBox = ({ onOpen }: { onOpen: () => void }) => {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring' }}
+      style={{ perspective: 800 }}
     >
       <motion.div
         className="relative w-32 h-32 md:w-40 md:h-40 cursor-pointer"
         onClick={handleOpen}
-        whileHover={!isOpen ? { scale: 1.05 } : {}}
+        whileHover={!isOpen ? { scale: 1.05, rotateY: 5 } : {}}
         whileTap={!isOpen ? { scale: 0.95 } : {}}
+        style={{ transformStyle: 'preserve-3d' }}
       >
+        {/* 盒子底部阴影 */}
+        <motion.div
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-4 md:w-32 md:h-5 rounded-[50%] bg-black/30 blur-md"
+          animate={isOpen ? { scale: 1.2, opacity: 0.5 } : { scale: 1, opacity: 0.3 }}
+          transition={{ duration: 0.5 }}
+        />
+
         {/* 盒子底部 */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-16 md:w-36 md:h-20 bg-gradient-to-b from-rose-900 to-rose-950 rounded-b-lg border-2 border-rose-800 flex items-center justify-center">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-16 md:w-36 md:h-20 bg-gradient-to-b from-rose-900 to-rose-950 rounded-b-lg border-2 border-rose-800 flex items-center justify-center shadow-lg shadow-rose-950/50">
           {/* 内衬 */}
           <div className="w-24 h-12 md:w-32 md:h-16 bg-gradient-to-b from-rose-100 to-rose-50 rounded-b-sm flex items-center justify-center">
             {/* 戒指 */}
@@ -220,7 +368,7 @@ const RingBox = ({ onOpen }: { onOpen: () => void }) => {
 
         {/* 盒子盖子 */}
         <motion.div
-          className="absolute bottom-14 md:bottom-[4.5rem] left-1/2 -translate-x-1/2 w-28 h-10 md:w-36 md:h-12 bg-gradient-to-b from-rose-800 to-rose-900 rounded-t-lg border-2 border-b-0 border-rose-700 origin-bottom"
+          className="absolute bottom-14 md:bottom-[4.5rem] left-1/2 -translate-x-1/2 w-28 h-10 md:w-36 md:h-12 bg-gradient-to-b from-rose-800 to-rose-900 rounded-t-lg border-2 border-b-0 border-rose-700 origin-bottom shadow-md"
           animate={isOpen ? { rotateX: -120, y: -20 } : { rotateX: 0 }}
           transition={{ type: 'spring', stiffness: 80 }}
           style={{ transformStyle: 'preserve-3d' }}
@@ -254,31 +402,59 @@ const RingBox = ({ onOpen }: { onOpen: () => void }) => {
       )}
     </motion.div>
   );
-};
+});
 
+// ---- 主组件 ----
 const ProposalReveal = () => {
+  const isMobile = useIsMobile();
   const [phase, setPhase] = useState<'constellation' | 'photo' | 'text' | 'ring' | 'question' | 'celebration'>('constellation');
   const [visibleParagraphs, setVisibleParagraphs] = useState(0);
   const [answered, setAnswered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLDivElement>(null);
 
-  // 逐段显示文字
-  useEffect(() => {
-    if (phase === 'text') {
-      const timer = setInterval(() => {
-        setVisibleParagraphs((prev) => {
-          if (prev >= paragraphs.length) {
-            clearInterval(timer);
-            // 文字全部显示后过渡到戒指盒
-            setTimeout(() => setPhase('ring'), 1500);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1800);
-      return () => clearInterval(timer);
+  // 预计算所有粒子数据（只算一次）
+  const starParticles = useMemo(() => generateStarData(isMobile ? 5 : 8), [isMobile]);
+  const petalParticles = useMemo(() => generatePetalData(isMobile ? 8 : 15), [isMobile]);
+  const fallingElements = useMemo(() => generateFallingData(isMobile ? 15 : 25), [isMobile]);
+
+  // 自动滚动到最新文字
+  const scrollToBottom = useCallback(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [phase]);
+  }, []);
+
+  // 逐段显示文字（情感节奏）
+  useEffect(() => {
+    if (phase !== 'text') return;
+
+    let currentIndex = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const showNext = () => {
+      currentIndex++;
+      setVisibleParagraphs(currentIndex);
+
+      // 每段显示后滚动
+      setTimeout(scrollToBottom, 100);
+
+      if (currentIndex >= paragraphs.length) {
+        // 文字全部显示后过渡到戒指盒
+        setTimeout(() => setPhase('ring'), 2000);
+        return;
+      }
+
+      // 使用预设的节奏，最后一段前给更长的停顿
+      const delay = paragraphDelays[currentIndex] ?? 2000;
+      timer = setTimeout(showNext, delay);
+    };
+
+    // 首段延迟
+    timer = setTimeout(showNext, 1200);
+
+    return () => clearTimeout(timer);
+  }, [phase, scrollToBottom]);
 
   const handleConstellationComplete = useCallback(() => {
     setPhase('photo');
@@ -289,25 +465,28 @@ const ProposalReveal = () => {
     setPhase('question');
   }, []);
 
-  const handleYes = () => {
+  const handleYes = useCallback(() => {
     setAnswered(true);
     setPhase('celebration');
+    haptic([100, 50, 100, 50, 200]); // 庆祝振动模式
 
-    // 超级烟花
-    const duration = 8000;
+    // 烟花 —— 移动端减少粒子数
+    const duration = isMobile ? 5000 : 8000;
     const end = Date.now() + duration;
+    const sideCount = isMobile ? 2 : 4;
+    const centerCount = isMobile ? 100 : 200;
 
     // 彩色烟花从两侧
     const frame = () => {
       confetti({
-        particleCount: 4,
+        particleCount: sideCount,
         angle: 60,
         spread: 55,
         origin: { x: 0, y: 0.7 },
         colors: ['#ff69b4', '#ff1493', '#ffd700', '#ffb6c1', '#ff6b9d'],
       });
       confetti({
-        particleCount: 4,
+        particleCount: sideCount,
         angle: 120,
         spread: 55,
         origin: { x: 1, y: 0.7 },
@@ -320,11 +499,12 @@ const ProposalReveal = () => {
     };
     frame();
 
-    // 连续中心爆炸
-    [0, 500, 1200, 2000, 3000].forEach((delay) => {
+    // 连续中心爆炸 —— 移动端减少次数
+    const bursts = isMobile ? [0, 600, 1500] : [0, 500, 1200, 2000, 3000];
+    bursts.forEach((delay) => {
       setTimeout(() => {
         confetti({
-          particleCount: 200,
+          particleCount: centerCount,
           spread: 120,
           origin: { x: 0.5, y: 0.4 + Math.random() * 0.3 },
           colors: ['#ff69b4', '#ff1493', '#ffd700', '#ffb6c1', '#fff', '#ff6b9d'],
@@ -333,18 +513,21 @@ const ProposalReveal = () => {
         });
       }, delay);
     });
-  };
+  }, [isMobile]);
 
-  // 鼠标跟随的微弱光晕
+  // 鼠标跟随的微弱光晕（仅桌面端）
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const glowX = useTransform(mouseX, (v) => v - 100);
   const glowY = useTransform(mouseY, (v) => v - 100);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    mouseX.set(e.clientX);
-    mouseY.set(e.clientY);
-  };
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    },
+    [mouseX, mouseY]
+  );
 
   return (
     <div
@@ -352,25 +535,27 @@ const ProposalReveal = () => {
       className="w-full max-w-2xl mx-auto text-center relative"
       onMouseMove={handleMouseMove}
     >
-      {/* 鼠标跟随光晕 */}
-      <motion.div
-        className="fixed w-[200px] h-[200px] rounded-full pointer-events-none z-0 hidden md:block"
-        style={{
-          x: glowX,
-          y: glowY,
-          background: 'radial-gradient(circle, rgba(255,182,193,0.08), transparent 70%)',
-        }}
-      />
+      {/* 鼠标跟随光晕（桌面端） */}
+      {!isMobile && (
+        <motion.div
+          className="fixed w-[200px] h-[200px] rounded-full pointer-events-none z-0"
+          style={{
+            x: glowX,
+            y: glowY,
+            background: 'radial-gradient(circle, rgba(255,182,193,0.08), transparent 70%)',
+          }}
+        />
+      )}
 
       {/* 背景粒子 */}
       {phase !== 'constellation' && (
         <>
-          {Array.from({ length: 8 }, (_, i) => (
-            <Particle key={`star-${i}`} delay={i * 0.8} type="star" />
+          {starParticles.map((data, i) => (
+            <StarParticle key={`star-${i}`} data={data} delay={i * 0.8} />
           ))}
           {phase === 'celebration' &&
-            Array.from({ length: 15 }, (_, i) => (
-              <Particle key={`petal-${i}`} delay={i * 0.4} type="petal" />
+            petalParticles.map((data, i) => (
+              <PetalParticle key={`petal-${i}`} data={data} delay={i * 0.4} />
             ))}
         </>
       )}
@@ -391,6 +576,7 @@ const ProposalReveal = () => {
       <AnimatePresence>
         {(phase === 'text' || phase === 'ring' || phase === 'question' || phase === 'celebration') && (
           <motion.div
+            ref={textAreaRef}
             className="relative mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -572,29 +758,54 @@ const ProposalReveal = () => {
               {proposalSignature}
             </motion.p>
 
+            {/* 日期印记 */}
+            <motion.p
+              className="text-sm text-white/30 mt-6 tracking-widest"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2.5 }}
+            >
+              2019.07.20 — forever
+            </motion.p>
+
+            {/* 重新播放按钮 */}
+            <motion.button
+              className="mt-8 px-6 py-2 rounded-full border border-white/10 text-white/40 text-sm hover:text-white/70 hover:border-white/30 transition-all"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 4 }}
+              onClick={() => {
+                setPhase('constellation');
+                setVisibleParagraphs(0);
+                setAnswered(false);
+              }}
+            >
+              再看一次 ↻
+            </motion.button>
+
             {/* 飘落的花瓣和心 */}
-            {[...Array(25)].map((_, i) => (
+            {fallingElements.map((data, i) => (
               <motion.div
                 key={i}
                 className="fixed pointer-events-none"
                 style={{
-                  left: `${Math.random() * 100}%`,
+                  left: `${data.left}%`,
                   top: -30,
-                  fontSize: `${Math.random() * 18 + 14}px`,
+                  fontSize: `${data.fontSize}px`,
                 }}
                 animate={{
                   y: ['0vh', '110vh'],
-                  x: [0, Math.random() * 100 - 50],
+                  x: [0, data.yDrift],
                   rotate: [0, 360],
                 }}
                 transition={{
-                  duration: Math.random() * 5 + 6,
+                  duration: data.duration,
                   repeat: Infinity,
-                  delay: Math.random() * 4,
+                  delay: data.delay,
                   ease: 'linear',
                 }}
               >
-                {['❤️', '💕', '🌹', '💖', '🌸', '💗', '✨'][Math.floor(Math.random() * 7)]}
+                {data.emoji}
               </motion.div>
             ))}
           </motion.div>
