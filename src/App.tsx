@@ -17,9 +17,9 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<HomePage />} />
         <Route path="/timeline" element={<TimelinePage />} />
-        <Route path="/proposal" element={<ProposalPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/memory-box" element={<MemoryBoxPage />} />
+        <Route path="/proposal" element={<ProposalPage />} />
       </Routes>
     </AnimatePresence>
   );

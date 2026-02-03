@@ -1,16 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QuizChallenge from '../components/proposal/QuizChallenge';
-import PuzzleGame from '../components/proposal/PuzzleGame';
 import LoveLetterReveal from '../components/proposal/LoveLetterReveal';
 import ProposalReveal from '../components/proposal/ProposalReveal';
 import { useAppStore } from '../stores/appStore';
 
-type Stage = 'quiz' | 'puzzle' | 'letter' | 'proposal';
+type Stage = 'quiz' | 'letter' | 'proposal';
 
 const stages: { id: Stage; title: string; icon: string }[] = [
   { id: 'quiz', title: '爱情问答', icon: '❓' },
-  { id: 'puzzle', title: '爱心拼图', icon: '🧩' },
   { id: 'letter', title: '星光情书', icon: '💌' },
   { id: 'proposal', title: '爱的告白', icon: '💍' },
 ];
@@ -18,9 +16,7 @@ const stages: { id: Stage; title: string; icon: string }[] = [
 const ProposalPage = () => {
   const { gameProgress, completeStage } = useAppStore();
   const [currentStage, setCurrentStage] = useState<Stage>(() => {
-    // 根据已完成的进度确定当前阶段
     if (!gameProgress.quizCompleted) return 'quiz';
-    if (!gameProgress.puzzleCompleted) return 'puzzle';
     if (!gameProgress.letterCompleted) return 'letter';
     return 'proposal';
   });
@@ -29,11 +25,9 @@ const ProposalPage = () => {
   const [showSkip, setShowSkip] = useState(false);
   const skipClicksRef = useRef<number[]>([]);
 
-  // 彩蛋：连续快速点击页面底部5次才显示跳过按钮
   const handleBottomClick = useCallback(() => {
     const now = Date.now();
     skipClicksRef.current.push(now);
-    // 只保留最近2秒内的点击
     skipClicksRef.current = skipClicksRef.current.filter(t => now - t < 2000);
     if (skipClicksRef.current.length >= 5) {
       setShowSkip(true);
@@ -44,15 +38,8 @@ const ProposalPage = () => {
   const handleStageComplete = (completedStage: Stage) => {
     setIsTransitioning(true);
 
-    // 标记完成
     if (completedStage === 'quiz') {
       completeStage('quizCompleted');
-      setTimeout(() => {
-        setCurrentStage('puzzle');
-        setIsTransitioning(false);
-      }, 1000);
-    } else if (completedStage === 'puzzle') {
-      completeStage('puzzleCompleted');
       setTimeout(() => {
         setCurrentStage('letter');
         setIsTransitioning(false);
@@ -172,9 +159,6 @@ const ProposalPage = () => {
               {currentStage === 'quiz' && (
                 <QuizChallenge onComplete={() => handleStageComplete('quiz')} />
               )}
-              {currentStage === 'puzzle' && (
-                <PuzzleGame onComplete={() => handleStageComplete('puzzle')} />
-              )}
               {currentStage === 'letter' && (
                 <LoveLetterReveal onComplete={() => handleStageComplete('letter')} />
               )}
@@ -183,7 +167,7 @@ const ProposalPage = () => {
           )}
         </AnimatePresence>
 
-        {/* 彩蛋跳过按钮：连续快速点击底部5次才显示 */}
+        {/* 彩蛋跳过按钮 */}
         {currentStage !== 'proposal' && (
           <div className="text-center mt-12">
             <div
@@ -200,9 +184,6 @@ const ProposalPage = () => {
                   onClick={() => {
                     if (currentStage === 'quiz') {
                       completeStage('quizCompleted');
-                      setCurrentStage('puzzle');
-                    } else if (currentStage === 'puzzle') {
-                      completeStage('puzzleCompleted');
                       setCurrentStage('letter');
                     } else if (currentStage === 'letter') {
                       completeStage('letterCompleted');

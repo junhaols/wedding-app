@@ -37,7 +37,7 @@ export const quizQuestions: QuizQuestion[] = [
     id: 5,
     question: '我们在一起多少年了？',
     options: ['4年', '5年', '6年', '7年'],
-    correctIndex: 1,
+    correctIndex: 3,
     hint: '从2019年开始计算哦~',
     loveMessage: '七年的时光，感谢你一直陪伴在我身边',
   },

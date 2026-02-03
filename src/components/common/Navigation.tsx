@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 const navItems = [
   { path: '/', label: '首页', icon: '✨' },
   { path: '/timeline', label: '我们的故事', icon: '📖' },
-  { path: '/proposal', label: '爱的告白', icon: '💍' },
   { path: '/gallery', label: '美好回忆', icon: '📷' },
-  { path: '/memory-box', label: '回忆盲盒', icon: '🎁' }, // 新增入口
+  { path: '/memory-box', label: '回忆盲盒', icon: '🎁' },
+  { path: '/proposal', label: '爱的告白', icon: '💍' },
 ];
 
 const Navigation = () => {
