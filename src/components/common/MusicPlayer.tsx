@@ -105,7 +105,7 @@ const MusicPlayer = () => {
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            className="absolute bottom-16 right-0 glass rounded-2xl p-4 w-64 mb-2"
+            className="absolute bottom-16 right-0 glass rounded-2xl p-4 w-56 sm:w-64 mb-2 max-w-[calc(100vw-3rem)]"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -142,7 +142,9 @@ const MusicPlayer = () => {
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
                   [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-star-gold"
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-star-gold
+                  [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-star-gold [&::-moz-range-thumb]:border-0"
               />
             </div>
           </motion.div>

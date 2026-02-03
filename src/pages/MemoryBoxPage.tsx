@@ -3,6 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomMemory, type MemoryCard, memoryCards } from '../data/memoryBoxData';
 import confetti from 'canvas-confetti';
 
+// 预计算背景粒子数据
+interface BgStar { left: number; top: number; size: number; opacity: number; dur: number; delay: number; }
+interface BgHeart { left: number; top: number; fontSize: number; dur: number; delay: number; }
+function generateBgStars(n: number): BgStar[] {
+  return Array.from({ length: n }, () => ({
+    left: Math.random() * 100, top: Math.random() * 100,
+    size: Math.random() * 2 + 1, opacity: Math.random() * 0.5 + 0.1,
+    dur: Math.random() * 3 + 2, delay: Math.random() * 2,
+  }));
+}
+function generateBgHearts(n: number): BgHeart[] {
+  return Array.from({ length: n }, () => ({
+    left: Math.random() * 100, top: Math.random() * 100,
+    fontSize: Math.random() * 20 + 10,
+    dur: Math.random() * 5 + 5, delay: Math.random() * 5,
+  }));
+}
+const BG_STARS = generateBgStars(20);
+const BG_HEARTS = generateBgHearts(10);
+
 type BoxState = 'idle' | 'shaking' | 'opening' | 'revealed';
 type OpenMode = 'manual' | 'auto';
 
@@ -107,52 +127,31 @@ export default function MemoryBoxPage() {
       {/* 背景图层 */}
       <div className="absolute inset-0 bg-gradient-radial from-night-600 via-night-900 to-night-900" />
       
-      {/* 动态星空背景 */}
+      {/* 动态星空背景 — 使用预计算数据 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* 星星 - 优化性能：减少数量 */}
-        {[...Array(20)].map((_, i) => (
+        {BG_STARS.map((star, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-white"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: Math.random() * 2 + 1 + 'px',
-              height: Math.random() * 2 + 1 + 'px',
-              opacity: Math.random() * 0.5 + 0.1,
+              left: `${star.left}%`,
+              top: `${star.top}%`,
+              width: star.size + 'px',
+              height: star.size + 'px',
+              opacity: star.opacity,
             }}
-            animate={{
-              opacity: [0.1, 0.8, 0.1],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: Math.random() * 3 + 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
+            animate={{ opacity: [0.1, 0.8, 0.1], scale: [1, 1.2, 1] }}
+            transition={{ duration: star.dur, repeat: Infinity, delay: star.delay }}
           />
         ))}
-        
-        {/* 漂浮爱心 - 优化性能：减少数量 */}
-        {[...Array(10)].map((_, i) => (
+
+        {BG_HEARTS.map((h, i) => (
           <motion.div
             key={`heart-${i}`}
             className="absolute text-love-pink/20"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              fontSize: `${Math.random() * 20 + 10}px`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.1, 0.3, 0.1],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: Math.random() * 5 + 5,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
+            style={{ left: `${h.left}%`, top: `${h.top}%`, fontSize: `${h.fontSize}px` }}
+            animate={{ y: [0, -30, 0], opacity: [0.1, 0.3, 0.1], rotate: [0, 10, -10, 0] }}
+            transition={{ duration: h.dur, repeat: Infinity, delay: h.delay }}
           >
             ❤
           </motion.div>
@@ -354,8 +353,8 @@ export default function MemoryBoxPage() {
                 {/* 卡片辉光背景 */}
                 <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
                 
-                {/* 图片容器 */}
-                <div className="relative aspect-[4/5] overflow-hidden bg-night-800">
+                {/* 图片容器 — 使用 4/3 比例适配风景照 */}
+                <div className="relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden bg-night-800">
                   <motion.img
                     src={currentMemory?.image}
                     alt="回忆"
