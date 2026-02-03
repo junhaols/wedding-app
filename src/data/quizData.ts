@@ -62,6 +62,6 @@ export const proposalText = `亲爱的思宝：
 这个问题
 我已经在心里问了无数遍`;
 
-export const proposalQuestion = '思宝，你愿意嫁给我吗？';
+export const proposalQuestion = '亲爱的思思，你愿意嫁给我吗？';
 
 export const proposalSignature = '—— 永远爱你的罗先生';

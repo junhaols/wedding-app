@@ -5,14 +5,18 @@ import { proposalText, proposalQuestion, proposalSignature } from '../../data/qu
 import { assetUrl } from '../../utils/assets';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 
-// 将求婚文案按换行拆成段落
-const paragraphs = proposalText
-  .split('\n\n')
-  .map((p) => p.trim())
+// 将求婚文案按行拆成独立句子（每句一张卡片）
+const sentences = proposalText
+  .split('\n')
+  .map((s) => s.trim())
   .filter(Boolean);
 
-// 每段文字的展示节奏（毫秒）：短句快，长句慢，高潮前停顿
-const paragraphDelays = [2200, 2000, 2000, 2800];
+// 每句的展示节奏（毫秒）
+const getSentenceDelay = (index: number, total: number) => {
+  if (index === 0) return 1500; // 称呼，稍快
+  if (index >= total - 3) return 3000; // 最后几句，放慢制造悬念
+  return 2200; // 正常节奏
+};
 
 // 触觉反馈（移动端振动）
 const haptic = (pattern: number | number[]) => {
@@ -418,14 +422,14 @@ const ProposalReveal = () => {
   const petalParticles = useMemo(() => generatePetalData(isMobile ? 8 : 15), [isMobile]);
   const fallingElements = useMemo(() => generateFallingData(isMobile ? 15 : 25), [isMobile]);
 
-  // 自动滚动到最新文字
+  // 自动滚动到最新卡片
   const scrollToBottom = useCallback(() => {
     if (textAreaRef.current) {
-      textAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      textAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, []);
 
-  // 逐段显示文字（情感节奏）
+  // 逐句显示文字（情感节奏）
   useEffect(() => {
     if (phase !== 'text') return;
 
@@ -436,22 +440,18 @@ const ProposalReveal = () => {
       currentIndex++;
       setVisibleParagraphs(currentIndex);
 
-      // 每段显示后滚动
       setTimeout(scrollToBottom, 100);
 
-      if (currentIndex >= paragraphs.length) {
-        // 文字全部显示后过渡到戒指盒
-        setTimeout(() => setPhase('ring'), 2000);
+      if (currentIndex >= sentences.length) {
+        setTimeout(() => setPhase('ring'), 2500);
         return;
       }
 
-      // 使用预设的节奏，最后一段前给更长的停顿
-      const delay = paragraphDelays[currentIndex] ?? 2000;
+      const delay = getSentenceDelay(currentIndex, sentences.length);
       timer = setTimeout(showNext, delay);
     };
 
-    // 首段延迟
-    timer = setTimeout(showNext, 1200);
+    timer = setTimeout(showNext, 1500);
 
     return () => clearTimeout(timer);
   }, [phase, scrollToBottom]);
@@ -572,54 +572,70 @@ const ProposalReveal = () => {
         {phase !== 'constellation' && <PolaroidPhoto />}
       </AnimatePresence>
 
-      {/* Phase 3: 逐段告白文字 */}
+      {/* Phase 3: 告白信 —— 卡片逐句弹出，居中显示 */}
       <AnimatePresence>
         {(phase === 'text' || phase === 'ring' || phase === 'question' || phase === 'celebration') && (
           <motion.div
             ref={textAreaRef}
-            className="relative mb-10"
+            className="relative mb-10 flex flex-col items-center gap-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            {/* 毛玻璃卡片 */}
-            <div className="glass rounded-3xl p-6 md:p-10 relative overflow-hidden">
-              {/* 装饰性引号 */}
-              <div className="absolute top-3 left-5 text-5xl text-white/5 font-serif">"</div>
-              <div className="absolute bottom-3 right-5 text-5xl text-white/5 font-serif">"</div>
+            {sentences.map((sentence, i) => (
+              <AnimatePresence key={i}>
+                {i < visibleParagraphs && (
+                  <motion.div
+                    className={`glass rounded-2xl px-6 py-4 md:px-8 md:py-5 max-w-lg w-full relative overflow-hidden ${
+                      i === 0 ? 'border border-star-gold/20' : 'border border-white/5'
+                    }`}
+                    initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 120,
+                      damping: 14,
+                    }}
+                  >
+                    {/* 卡片左侧装饰线 */}
+                    <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full ${
+                      i === 0
+                        ? 'bg-gradient-to-b from-star-gold/60 to-star-gold/20'
+                        : i >= sentences.length - 3
+                          ? 'bg-gradient-to-b from-love-pink/60 to-love-pink/20'
+                          : 'bg-gradient-to-b from-white/20 to-white/5'
+                    }`} />
 
-              {paragraphs.map((para, i) => (
-                <AnimatePresence key={i}>
-                  {i < visibleParagraphs && (
-                    <motion.p
-                      className="text-lg md:text-xl text-white/90 whitespace-pre-line leading-relaxed font-light mb-4 last:mb-0"
-                      initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
-                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                    >
-                      {para}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              ))}
+                    <p className={`text-center text-lg md:text-xl leading-relaxed ${
+                      i === 0
+                        ? 'text-star-gold font-elegant text-xl md:text-2xl'
+                        : i >= sentences.length - 3
+                          ? 'text-white font-medium'
+                          : 'text-white/85 font-light'
+                    }`}>
+                      {sentence}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            ))}
 
-              {/* 加载指示 */}
-              {visibleParagraphs < paragraphs.length && phase === 'text' && (
-                <motion.div
-                  className="flex justify-center gap-1 mt-4"
-                  animate={{ opacity: [0.3, 0.8, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-star-gold/60"
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </div>
+            {/* 等待下一句的呼吸指示 */}
+            {visibleParagraphs < sentences.length && phase === 'text' && (
+              <motion.div
+                className="flex justify-center gap-1.5 mt-2"
+                animate={{ opacity: [0.2, 0.7, 0.2] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-star-gold/50"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 0.7, delay: i * 0.15, repeat: Infinity }}
+                  />
+                ))}
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

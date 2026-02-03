@@ -69,9 +69,6 @@ const ProposalPage = () => {
           <h1 className="text-4xl md:text-5xl font-elegant gradient-text mb-4">
             爱的告白
           </h1>
-          <p className="text-white/60">
-            完成挑战，解锁我对你的心意
-          </p>
         </motion.div>
 
         {/* 进度指示器 */}
