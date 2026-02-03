@@ -16,7 +16,14 @@ const ProposalPage = lazy(() => import('./pages/ProposalPage'));
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <Suspense fallback={<div className="min-h-screen" />}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-star-gold/30 border-t-star-gold rounded-full animate-spin" />
+          <span className="text-white/30 text-sm tracking-widest">加载中</span>
+        </div>
+      </div>
+    }>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<HomePage />} />

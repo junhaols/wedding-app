@@ -9,6 +9,17 @@ import Carousel3DLeft from '../components/gallery/Carousel3DLeft';
 import FlyingPhotoDisplay, { type FlyingPhoto } from '../components/gallery/FlyingPhotoDisplay';
 import { shapes, getShapePosition, type ShapeType } from '../utils/shapeCalculator';
 
+// 预计算背景粒子数据
+interface DotData { left: number; top: number; animDuration: number; animDelay: number; }
+function generateDots(count: number): DotData[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    animDuration: 2 + Math.random() * 2,
+    animDelay: Math.random() * 2,
+  }));
+}
+
 export default function GalleryPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
   const [flyingPhotos, setFlyingPhotos] = useState<FlyingPhoto[]>([]);
@@ -86,27 +97,28 @@ export default function GalleryPage() {
   }, [runOneCycle]);
 
   const isMobile = useIsMobile();
+  const dots = useMemo(() => generateDots(isMobile ? 10 : 20), [isMobile]);
 
   return (
     <div className="min-h-screen bg-night-900 relative overflow-hidden">
-      {/* 背景装饰 */}
+      {/* 背景装饰 — 使用预计算数据 */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(isMobile ? 10 : 20)].map((_, i) => (
+        {dots.map((dot, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 rounded-full bg-white/20"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${dot.left}%`,
+              top: `${dot.top}%`,
             }}
             animate={{
               opacity: [0.2, 0.5, 0.2],
               scale: [1, 1.5, 1],
             }}
             transition={{
-              duration: 2 + Math.random() * 2,
+              duration: dot.animDuration,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: dot.animDelay,
             }}
           />
         ))}
@@ -196,10 +208,10 @@ export default function GalleryPage() {
               </div>
 
               <button
-                className="absolute top-0 right-0 -mt-12 text-white/50 hover:text-white transition-colors"
+                className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/70 transition-colors"
                 onClick={() => setSelectedPhoto(null)}
               >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

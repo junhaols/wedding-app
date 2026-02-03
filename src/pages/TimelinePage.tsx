@@ -3,6 +3,18 @@ import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-mo
 import { Link } from 'react-router-dom';
 import { storySlides } from '../data/timelineData';
 
+// 预计算背景星星数据
+interface StarData { left: number; top: number; size: number; opacity: number; }
+function generateStars(count: number): StarData[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    size: Math.random() * 2 + 1,
+    opacity: Math.random() * 0.5 + 0.1,
+  }));
+}
+const STAR_DATA = generateStars(40);
+
 // 安全获取副标题的辅助函数
 const getSafeSubtitle = (subtitle: string | undefined) => {
   if (!subtitle) return '';
@@ -261,16 +273,16 @@ export default function TimelinePage() {
           className="absolute inset-0"
           style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
         >
-          {[...Array(40)].map((_, i) => (
+          {STAR_DATA.map((star, i) => (
             <div
               key={i}
               className="absolute rounded-full bg-white"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                width: Math.random() * 2 + 1 + 'px',
-                height: Math.random() * 2 + 1 + 'px',
-                opacity: Math.random() * 0.5 + 0.1,
+                left: `${star.left}%`,
+                top: `${star.top}%`,
+                width: star.size + 'px',
+                height: star.size + 'px',
+                opacity: star.opacity,
               }}
             />
           ))}
@@ -308,7 +320,7 @@ export default function TimelinePage() {
         {/* 中央进度线 */}
         <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/5 -translate-x-1/2">
           <motion.div 
-            className="w-full bg-gradient-to-b from-star-gold via-love-pink to-star-gold origin-top shadow-[0_0_10px_rgba(255,215,0,0.5)]"
+            className="w-full bg-gradient-to-b from-star-gold via-love-pink to-love-rose origin-top shadow-[0_0_10px_rgba(255,215,0,0.5)]"
             style={{ scaleY, height: '100%' }}
           />
         </div>
@@ -339,18 +351,31 @@ export default function TimelinePage() {
           viewport={{ once: true }}
         >
           <p className="text-white/50 text-xl mb-10 font-romantic tracking-widest">故事未完待续...</p>
-          <Link to="/proposal">
-            <motion.button
-              className="px-12 py-5 rounded-full bg-gradient-to-r from-love-pink to-love-rose text-white font-bold text-lg shadow-[0_0_40px_rgba(255,105,180,0.3)] group relative overflow-hidden border border-white/10"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="relative z-10 flex items-center gap-3">
-                进入爱的告白 <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </span>
-              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </motion.button>
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Link to="/gallery">
+              <motion.button
+                className="px-10 py-4 rounded-full bg-white/5 backdrop-blur-md text-white font-medium text-base border border-white/10 hover:bg-white/10 transition-colors group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="flex items-center gap-2">
+                  📷 浏览美好回忆 <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+              </motion.button>
+            </Link>
+            <Link to="/proposal">
+              <motion.button
+                className="px-10 py-4 rounded-full bg-gradient-to-r from-love-pink to-love-rose text-white font-bold text-base shadow-[0_0_40px_rgba(255,105,180,0.3)] group relative overflow-hidden border border-white/10"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  💍 进入爱的告白 <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </motion.button>
+            </Link>
+          </div>
         </motion.div>
       </div>
     </div>
