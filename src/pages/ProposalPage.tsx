@@ -178,6 +178,7 @@ const ProposalPage = () => {
           {!isTransitioning && (
             <motion.div
               key={currentStage}
+              className="flex flex-col items-center w-full"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -30 }}

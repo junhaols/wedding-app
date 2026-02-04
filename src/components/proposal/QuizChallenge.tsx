@@ -55,7 +55,7 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
       </motion.div>
 
       {/* 进度条 */}
-      <div className="mb-8 px-2">
+      <div className="mb-8">
         <div className="flex justify-between text-sm text-white/50 mb-2">
           <span>问题 {currentQuestion + 1}/{quizQuestions.length}</span>
           <span>得分: {score}</span>

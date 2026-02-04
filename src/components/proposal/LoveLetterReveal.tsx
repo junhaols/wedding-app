@@ -57,7 +57,7 @@ const LoveLetterReveal = ({ onComplete }: LoveLetterRevealProps) => {
       </motion.div>
 
       {/* 进度 */}
-      <div className="mb-6 px-2">
+      <div className="mb-6">
         <div className="flex justify-between text-sm text-white/50 mb-2">
           <span>已揭示 {revealedParts.length}/{letterParts.length}</span>
           <span>收集星光</span>
@@ -72,7 +72,7 @@ const LoveLetterReveal = ({ onComplete }: LoveLetterRevealProps) => {
       </div>
 
       {/* 星空区域 */}
-      <div className="relative glass rounded-3xl p-6 md:p-8 min-h-[400px] overflow-hidden">
+      <div className="relative glass rounded-3xl p-6 md:p-8 min-h-[380px] overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 bg-gradient-to-b from-night-700/50 to-night-900/50" />
 
