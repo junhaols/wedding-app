@@ -58,17 +58,47 @@ const ProposalPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-full py-24 md:py-32 px-4 sm:px-6 md:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen w-full py-24 md:py-32 px-4 sm:px-6 md:px-8 relative overflow-hidden">
+      {/* 背景装饰光晕 */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-love-pink/[0.04] blur-[120px]" />
+        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-star-gold/[0.03] blur-[100px]" />
+      </div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* 页面标题 */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-4xl md:text-5xl font-elegant gradient-text mb-4">
+          {/* 装饰线 */}
+          <motion.div
+            className="flex items-center justify-center gap-3 mb-4"
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+          >
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-star-gold/40" />
+            <span className="text-star-gold/40 text-xs">✦</span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-star-gold/40" />
+          </motion.div>
+
+          <h1 className="text-4xl md:text-5xl font-elegant gradient-text mb-3">
             爱的告白
           </h1>
+
+          {/* 底部装饰线 */}
+          <motion.div
+            className="flex items-center justify-center gap-3 mt-2"
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-love-pink/30" />
+            <span className="text-love-pink/30 text-[10px]">♥</span>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-love-pink/30" />
+          </motion.div>
         </motion.div>
 
         {/* 进度指示器 */}

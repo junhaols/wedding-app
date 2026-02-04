@@ -43,7 +43,7 @@ const LoveLetterReveal = ({ onComplete }: LoveLetterRevealProps) => {
 
   return (
     <motion.div
-      className="w-full max-w-2xl mx-auto"
+      className="w-full max-w-lg mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -53,18 +53,18 @@ const LoveLetterReveal = ({ onComplete }: LoveLetterRevealProps) => {
         <h2 className="text-2xl md:text-3xl font-elegant gradient-text mb-2">
           星光情书
         </h2>
-        <p className="text-white/60">点击星星，揭开我写给你的话</p>
+        <p className="text-white/50 text-sm">点击星星，揭开我写给你的话</p>
       </motion.div>
 
       {/* 进度 */}
-      <div className="mb-6">
-        <div className="flex justify-between text-sm text-white/60 mb-2">
+      <div className="mb-6 px-2">
+        <div className="flex justify-between text-sm text-white/50 mb-2">
           <span>已揭示 {revealedParts.length}/{letterParts.length}</span>
           <span>收集星光</span>
         </div>
-        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-star-gold to-love-pink"
+            className="h-full bg-gradient-to-r from-star-gold to-love-pink rounded-full"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
           />
@@ -72,7 +72,7 @@ const LoveLetterReveal = ({ onComplete }: LoveLetterRevealProps) => {
       </div>
 
       {/* 星空区域 */}
-      <div className="relative glass rounded-3xl p-8 min-h-[400px] overflow-hidden">
+      <div className="relative glass rounded-3xl p-6 md:p-8 min-h-[400px] overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 bg-gradient-to-b from-night-700/50 to-night-900/50" />
 

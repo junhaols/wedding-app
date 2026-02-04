@@ -290,16 +290,16 @@ const HeartConstellation = memo(({ onComplete }: { onComplete: () => void }) => 
 // ---- 宝丽来相框照片 ----
 const PolaroidPhoto = memo(() => (
   <motion.div
-    className="relative mx-auto mb-10 w-56 md:w-72"
-    initial={{ opacity: 0, y: 40, rotateZ: -3 }}
-    animate={{ opacity: 1, y: 0, rotateZ: -3 }}
+    className="relative mx-auto mb-8 w-52 md:w-64"
+    initial={{ opacity: 0, y: 40, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
     transition={{ type: 'spring', duration: 1.2 }}
   >
     {/* 外发光 */}
-    <div className="absolute -inset-4 bg-gradient-to-br from-love-pink/20 via-star-gold/10 to-love-rose/20 rounded-lg blur-xl" />
+    <div className="absolute -inset-6 bg-gradient-to-br from-love-pink/15 via-star-gold/10 to-love-rose/15 rounded-2xl blur-2xl" />
     {/* 相框 */}
-    <div className="relative bg-white/95 p-3 pb-12 rounded shadow-2xl shadow-love-pink/30">
-      <div className="overflow-hidden rounded-sm">
+    <div className="relative bg-white/95 p-2.5 pb-10 rounded-lg shadow-2xl shadow-love-pink/25">
+      <div className="overflow-hidden rounded">
         <img
           src={assetUrl('/images/hero/poster.webp')}
           alt="我们的照片"
@@ -308,7 +308,7 @@ const PolaroidPhoto = memo(() => (
       </div>
       {/* 相框底部手写文字 */}
       <motion.p
-        className="absolute bottom-3 left-0 right-0 text-center text-sm text-gray-500 font-elegant italic"
+        className="absolute bottom-2.5 left-0 right-0 text-center text-sm text-gray-500 font-elegant italic"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
@@ -532,7 +532,7 @@ const ProposalReveal = () => {
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-2xl mx-auto text-center relative"
+      className="w-full max-w-xl mx-auto text-center relative flex flex-col items-center"
       onMouseMove={handleMouseMove}
     >
       {/* 鼠标跟随光晕（桌面端） */}
@@ -572,12 +572,26 @@ const ProposalReveal = () => {
         {phase !== 'constellation' && <PolaroidPhoto />}
       </AnimatePresence>
 
-      {/* Phase 3: 告白信 —— 卡片逐句弹出，居中显示 */}
+      {/* 照片与文字间的装饰分隔 */}
+      {phase !== 'constellation' && (phase === 'text' || phase === 'ring' || phase === 'question' || phase === 'celebration') && (
+        <motion.div
+          className="flex items-center justify-center gap-3 my-6"
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
+          <div className="h-px w-16 bg-gradient-to-r from-transparent to-star-gold/30" />
+          <span className="text-star-gold/40 text-sm">✦</span>
+          <div className="h-px w-16 bg-gradient-to-l from-transparent to-star-gold/30" />
+        </motion.div>
+      )}
+
+      {/* Phase 3: 告白信 —— 卡片逐句弹出，全部居中 */}
       <AnimatePresence>
         {(phase === 'text' || phase === 'ring' || phase === 'question' || phase === 'celebration') && (
           <motion.div
             ref={textAreaRef}
-            className="relative mb-10 flex flex-col items-center gap-4"
+            className="relative mb-10 flex flex-col items-center gap-5 px-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -585,10 +599,14 @@ const ProposalReveal = () => {
               <AnimatePresence key={i}>
                 {i < visibleParagraphs && (
                   <motion.div
-                    className={`glass rounded-2xl px-6 py-4 md:px-8 md:py-5 max-w-lg w-full relative overflow-hidden ${
-                      i === 0 ? 'border border-star-gold/20' : 'border border-white/5'
+                    className={`rounded-2xl px-7 py-5 md:px-10 md:py-6 max-w-md w-full relative overflow-hidden text-center ${
+                      i === 0
+                        ? 'bg-gradient-to-b from-star-gold/[0.08] to-transparent border border-star-gold/20 shadow-[0_0_30px_rgba(255,215,0,0.06)]'
+                        : i >= sentences.length - 3
+                          ? 'bg-gradient-to-b from-love-pink/[0.07] to-transparent border border-love-pink/15 shadow-[0_0_30px_rgba(255,105,180,0.05)]'
+                          : 'bg-white/[0.03] backdrop-blur-lg border border-white/[0.08]'
                     }`}
-                    initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                    initial={{ opacity: 0, y: 30, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{
                       type: 'spring',
@@ -596,42 +614,51 @@ const ProposalReveal = () => {
                       damping: 14,
                     }}
                   >
-                    {/* 卡片左侧装饰线 */}
-                    <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full ${
+                    {/* 顶部居中装饰线 */}
+                    <div className={`absolute top-0 left-[20%] right-[20%] h-px ${
                       i === 0
-                        ? 'bg-gradient-to-b from-star-gold/60 to-star-gold/20'
+                        ? 'bg-gradient-to-r from-transparent via-star-gold/40 to-transparent'
                         : i >= sentences.length - 3
-                          ? 'bg-gradient-to-b from-love-pink/60 to-love-pink/20'
-                          : 'bg-gradient-to-b from-white/20 to-white/5'
+                          ? 'bg-gradient-to-r from-transparent via-love-pink/30 to-transparent'
+                          : 'bg-gradient-to-r from-transparent via-white/10 to-transparent'
                     }`} />
 
-                    <p className={`text-center text-lg md:text-xl leading-relaxed ${
+                    <p className={`text-center leading-relaxed tracking-wide ${
                       i === 0
                         ? 'text-star-gold font-elegant text-xl md:text-2xl'
                         : i >= sentences.length - 3
-                          ? 'text-white font-medium'
-                          : 'text-white/85 font-light'
+                          ? 'text-white font-medium text-lg md:text-xl'
+                          : 'text-white/80 font-light text-base md:text-lg'
                     }`}>
                       {sentence}
                     </p>
+
+                    {/* 底部居中装饰线 */}
+                    <div className={`absolute bottom-0 left-[25%] right-[25%] h-px ${
+                      i === 0
+                        ? 'bg-gradient-to-r from-transparent via-star-gold/20 to-transparent'
+                        : i >= sentences.length - 3
+                          ? 'bg-gradient-to-r from-transparent via-love-pink/15 to-transparent'
+                          : ''
+                    }`} />
                   </motion.div>
                 )}
               </AnimatePresence>
             ))}
 
-            {/* 等待下一句的呼吸指示 */}
-            {visibleParagraphs < sentences.length && phase === 'text' && (
+            {/* 段落间装饰（第一句之后、最后三句之前） */}
+            {visibleParagraphs > 0 && visibleParagraphs < sentences.length && phase === 'text' && (
               <motion.div
-                className="flex justify-center gap-1.5 mt-2"
-                animate={{ opacity: [0.2, 0.7, 0.2] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="flex justify-center gap-2"
+                animate={{ opacity: [0.2, 0.6, 0.2] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
               >
                 {[0, 1, 2].map((i) => (
                   <motion.div
                     key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-star-gold/50"
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 0.7, delay: i * 0.15, repeat: Infinity }}
+                    className="w-1 h-1 rounded-full bg-star-gold/40"
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
                   />
                 ))}
               </motion.div>
@@ -738,12 +765,13 @@ const ProposalReveal = () => {
       <AnimatePresence>
         {phase === 'celebration' && (
           <motion.div
+            className="flex flex-col items-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
             <motion.div
-              className="text-7xl md:text-9xl mb-8"
+              className="text-6xl md:text-8xl mb-6"
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 100, delay: 0.3 }}
@@ -752,7 +780,7 @@ const ProposalReveal = () => {
             </motion.div>
 
             <motion.h2
-              className="text-3xl md:text-5xl font-elegant gradient-text mb-4"
+              className="text-3xl md:text-5xl font-elegant gradient-text mb-3 text-center"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.8 }}
@@ -761,7 +789,7 @@ const ProposalReveal = () => {
             </motion.h2>
 
             <motion.p
-              className="text-xl md:text-2xl text-white/80 mb-4"
+              className="text-xl md:text-2xl text-white/80 mb-5 text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.3 }}
@@ -769,15 +797,20 @@ const ProposalReveal = () => {
               余生请多指教
             </motion.p>
 
+            {/* 居中装饰分隔线 */}
             <motion.div
-              className="w-16 h-px mx-auto bg-gradient-to-r from-transparent via-star-gold to-transparent mb-4"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
+              className="flex items-center justify-center gap-2 mb-5"
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
               transition={{ delay: 1.6, duration: 0.8 }}
-            />
+            >
+              <div className="h-px w-10 bg-gradient-to-r from-transparent to-star-gold/50" />
+              <span className="text-star-gold/50 text-xs">✦</span>
+              <div className="h-px w-10 bg-gradient-to-l from-transparent to-star-gold/50" />
+            </motion.div>
 
             <motion.p
-              className="text-lg text-star-gold font-elegant"
+              className="text-lg text-star-gold font-elegant text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.8 }}
@@ -787,7 +820,7 @@ const ProposalReveal = () => {
 
             {/* 日期印记 */}
             <motion.p
-              className="text-sm text-white/30 mt-6 tracking-widest"
+              className="text-sm text-white/30 mt-6 tracking-[0.2em] text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 2.5 }}

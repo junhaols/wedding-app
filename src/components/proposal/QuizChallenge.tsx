@@ -41,7 +41,7 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
 
   return (
     <motion.div
-      className="w-full max-w-2xl mx-auto"
+      className="w-full max-w-lg mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -51,18 +51,18 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
         <h2 className="text-2xl md:text-3xl font-elegant gradient-text mb-2">
           爱情问答
         </h2>
-        <p className="text-white/60">看看你有多了解我们的故事</p>
+        <p className="text-white/50 text-sm">看看你有多了解我们的故事</p>
       </motion.div>
 
       {/* 进度条 */}
-      <div className="mb-8">
-        <div className="flex justify-between text-sm text-white/60 mb-2">
+      <div className="mb-8 px-2">
+        <div className="flex justify-between text-sm text-white/50 mb-2">
           <span>问题 {currentQuestion + 1}/{quizQuestions.length}</span>
           <span>得分: {score}</span>
         </div>
-        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-star-gold to-love-pink"
+            className="h-full bg-gradient-to-r from-star-gold to-love-pink rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -74,7 +74,7 @@ const QuizChallenge = ({ onComplete }: QuizChallengeProps) => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentQuestion}
-          className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-6 md:p-8"
+          className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.2)] p-6 md:p-8"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
