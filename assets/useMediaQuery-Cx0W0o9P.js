@@ -1,0 +1,1 @@
+import{a as n}from"./framer-motion-B1hJR-WS.js";function o(t){const[c,s]=n.useState(!1);return n.useEffect(()=>{const e=window.matchMedia(t);s(e.matches);const a=r=>{s(r.matches)};return e.addEventListener("change",a),()=>e.removeEventListener("change",a)},[t]),c}const m=()=>o("(max-width: 767px)");export{m as u};
