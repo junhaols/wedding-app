@@ -50,6 +50,19 @@ export const shapes: ShapeType[] = [
   'letter-F', 'letter-O', 'letter-R', 'letter-E', 'letter-V', 'letter-E', 'letter-R'
 ];
 
+// 每个形状对应的浪漫语句，与 shapes 数组一一对应
+export const shapeQuotes: string[] = [
+  '每一张照片，都是我爱你的证据',
+  '思念是最长情的告白',
+  // I LOVE YOU FOREVER — 每个字母对应一个词，逐步拼成完整告白
+  '我', '用一辈子', '守护', '你的', '每一个',
+  '微笑', '与', '泪水',
+  '从今以后', '风雨', '同舟', '不离', '不弃', '直到', '永远',
+];
+
+// 字母阶段的起始索引（shapes 数组中 letter-I 的位置）
+export const LETTER_PHASE_START = 2;
+
 // 照片数量常量
 export const PHOTO_COUNT = 16;
 

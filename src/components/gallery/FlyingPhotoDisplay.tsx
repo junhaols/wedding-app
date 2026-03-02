@@ -30,7 +30,7 @@ const FlyingPhotoDisplay = ({
   heartComplete,
   isResetting,
   heartCount,
-  currentShape
+  currentShape,
 }: FlyingPhotoDisplayProps) => {
   // 计算照片群的中心位置
   const centerX = photos.length > 0
@@ -307,60 +307,80 @@ const FlyingPhotoDisplay = ({
 
       {/* 飞入的照片 */}
       <AnimatePresence>
-        {photos.map((photo, index) => (
-          <motion.div
-            key={photo.flyId}
-            className="absolute"
-            style={{
-              zIndex: 10 + index + Math.round(photo.targetZ),
-              willChange: 'transform',
-            }}
-            initial={{
-              x: -150,
-              y: window.innerHeight / 2 - 100,
-              opacity: 0,
-              scale: 0.5,
-            }}
-            animate={{
-              x: photo.targetX,
-              y: photo.targetY,
-              opacity: 1,
-              scale: 1,
-            }}
-            exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.4 } }}
-            transition={{
-              duration: 0.8,
-              ease: 'easeOut',
-            }}
-          >
-            <div
-              className="relative cursor-pointer bg-white/90 p-1.5 rounded-sm transition-transform duration-200 hover:scale-110 hover:z-50"
+        {photos.map((photo, index) => {
+          const breathDuration = [3, 3.5, 4][index % 3];
+          return (
+            <motion.div
+              key={photo.flyId}
+              className="absolute"
               style={{
-                width: 150,
-                transform: `rotate(${photo.targetRotate}deg) scale(${photo.targetScale})`,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,105,180,0.15)',
+                zIndex: 10 + index + Math.round(photo.targetZ),
+                willChange: 'transform',
               }}
-              onClick={() => onSelect(photo)}
+              initial={{
+                x: -150,
+                y: window.innerHeight / 2 - 100,
+                opacity: 0,
+                scale: 0.5,
+                boxShadow: '0 0 30px 10px rgba(255,215,0,0.4), -20px 0 40px 5px rgba(255,105,180,0.3)',
+              }}
+              animate={{
+                x: photo.targetX,
+                y: photo.targetY,
+                opacity: 1,
+                scale: 1,
+                boxShadow: '0 0 0px 0px transparent, 0 0 0px 0px transparent',
+              }}
+              exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.4 } }}
+              transition={{
+                duration: 0.8,
+                ease: 'easeOut',
+              }}
             >
-              <div className="aspect-[3/4] overflow-hidden">
-                <img
-                  src={photo.src}
-                  alt={photo.alt}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                  loading="lazy"
-                />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+              {/* 呼吸动画包裹层 */}
+              <motion.div
+                animate={{
+                  y: [0, -3, 0, 3, 0],
+                  rotate: [0, 0.5, 0, -0.5, 0],
+                  scale: [1, 1.02, 1, 0.98, 1],
+                }}
+                transition={{
+                  duration: breathDuration,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: index * 0.15,
+                }}
+              >
+                <div
+                  className="relative cursor-pointer bg-white/90 p-1.5 rounded-sm transition-transform duration-200 hover:scale-110 hover:z-50"
+                  style={{
+                    width: 150,
+                    transform: `rotate(${photo.targetRotate}deg) scale(${photo.targetScale})`,
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,105,180,0.15)',
+                  }}
+                  onClick={() => onSelect(photo)}
+                >
+                  <div className="aspect-[3/4] overflow-hidden">
+                    <img
+                      src={photo.src}
+                      alt={photo.alt}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
 
       {/* 等待状态 - 纯CSS高性能爱心特效 */}
       {photos.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 bg-heart-glow" />
-          <div className="relative flex items-center justify-center" style={{ width: '35vw', height: '35vh' }}>
+          <div className="relative flex flex-col items-center justify-center" style={{ width: '35vw', height: '35vh' }}>
             <div className="heart-main text-love-pink" style={{ fontSize: 'min(22vw, 22vh)' }}>
               ❤️
             </div>
@@ -405,6 +425,32 @@ const FlyingPhotoDisplay = ({
                 ✦
               </div>
             ))}
+
+            {/* 温馨等待提示 */}
+            <motion.p
+              className="absolute font-romantic text-lg text-white/50 tracking-[0.3em]"
+              style={{ bottom: '-10%' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 1 }}
+            >
+              {heartCount > 0 ? '下一段回忆即将到来' : '我们的美好回忆正在飘来'}
+              <span className="inline-flex ml-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 mx-0.5"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: i * 0.15,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                ))}
+              </span>
+            </motion.p>
           </div>
         </div>
       )}
