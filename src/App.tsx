@@ -11,6 +11,7 @@ const TimelinePage = lazy(() => import('./pages/TimelinePage'));
 const GalleryPage = lazy(() => import('./pages/GalleryPage'));
 const MemoryBoxPage = lazy(() => import('./pages/MemoryBoxPage'));
 const ProposalPage = lazy(() => import('./pages/ProposalPage'));
+const FireworksPage = lazy(() => import('./pages/FireworksPage'));
 
 // 把路由部分提取到子组件中（因为 useLocation 必须在 Router 内部使用）
 function AnimatedRoutes() {
@@ -31,6 +32,7 @@ function AnimatedRoutes() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/memory-box" element={<MemoryBoxPage />} />
           <Route path="/proposal" element={<ProposalPage />} />
+          <Route path="/fireworks" element={<FireworksPage />} />
         </Routes>
       </AnimatePresence>
     </Suspense>
