@@ -69,7 +69,7 @@ export default function GalleryPage() {
 
     setTimeout(() => {
       setIsResetting(true);
-    }, 15000);
+    }, 8000);
 
     setTimeout(() => {
       setFlyingPhotos([]);
@@ -77,10 +77,10 @@ export default function GalleryPage() {
       setIsResetting(false);
       setHeartCount(prev => prev + 1);
       shapeIndexRef.current += 1;
-    }, 16000);
+    }, 9000);
   }, [allPhotos]);
 
-  // 首次进入页面1秒后启动，之后每20秒循环
+  // 首次进入页面1秒后启动，之后每11秒循环
   useEffect(() => {
     const initialTimer = setTimeout(() => {
       runOneCycle();
@@ -88,7 +88,7 @@ export default function GalleryPage() {
 
     const intervalTimer = setInterval(() => {
       runOneCycle();
-    }, 20000);
+    }, 11000);
 
     return () => {
       clearTimeout(initialTimer);

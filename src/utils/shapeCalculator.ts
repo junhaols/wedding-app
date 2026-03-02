@@ -43,7 +43,7 @@ export const shapeIcons: Record<ShapeType, string> = {
 
 // 形状列表
 export const shapes: ShapeType[] = [
-  'heart', 'star', 'flower', 'infinity', 'diamond', 'circle', 'Si',
+  'heart', 'Si',
   // I LOVE YOU FOREVER
   'letter-I', 'letter-L', 'letter-O', 'letter-V', 'letter-E',
   'letter-Y', 'letter-O', 'letter-U',
