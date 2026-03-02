@@ -193,7 +193,7 @@ function mkAmbient(w: number, h: number, avoidCenter: boolean): ABurst {
 const FireworksPage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef   = useRef(0);
-  const timerRef  = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef  = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [show, setShow] = useState<'start' | 'playing' | 'end'>('start');
 
   const startShow = useCallback(() => setShow('playing'), []);
