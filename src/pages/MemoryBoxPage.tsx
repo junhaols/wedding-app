@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomMemory, type MemoryCard, memoryCards } from '../data/memoryBoxData';
 import confetti from 'canvas-confetti';
@@ -23,6 +23,20 @@ function generateBgHearts(n: number): BgHeart[] {
 const BG_STARS = generateBgStars(20);
 const BG_HEARTS = generateBgHearts(10);
 
+// Ken Burns 动画预设
+const kbPresets = [
+  { scale: [1, 1.1], x: [0, -15], y: [0, -8] },
+  { scale: [1.08, 1], x: [15, 0], y: [8, 0] },
+  { scale: [1, 1.06], x: [0, 12], y: [0, 0] },
+  { scale: [1.06, 1], x: [-10, 0], y: [0, 5] },
+  { scale: [1, 1.08], x: [0, 0], y: [0, -12] },
+  { scale: [1.08, 1.01], x: [8, -8], y: [-4, 4] },
+] as const;
+
+function randomKb() {
+  return kbPresets[Math.floor(Math.random() * kbPresets.length)];
+}
+
 type BoxState = 'idle' | 'shaking' | 'opening' | 'revealed';
 type OpenMode = 'manual' | 'auto';
 
@@ -33,57 +47,32 @@ export default function MemoryBoxPage() {
   const [openMode, setOpenMode] = useState<OpenMode>('manual');
   const [autoInterval, setAutoInterval] = useState(5);
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [slideKey, setSlideKey] = useState(0); // 用于 AnimatePresence crossfade
+  const kb = useMemo(() => randomKb(), [slideKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerConfetti = useCallback(() => {
-    // 爱心形状的礼花
     const defaults = {
-      spread: 360,
-      ticks: 100,
-      gravity: 0.5,
-      decay: 0.94,
-      startVelocity: 20,
+      spread: 360, ticks: 100, gravity: 0.5, decay: 0.94, startVelocity: 20,
       colors: ['#ff69b4', '#ff1493', '#ffb6c1', '#ffc0cb', '#fff'],
     };
-
-    confetti({
-      ...defaults,
-      particleCount: 30,
-      scalar: 1.2,
-      shapes: ['circle'],
-      origin: { x: 0.5, y: 0.5 },
-    });
-
+    confetti({ ...defaults, particleCount: 30, scalar: 1.2, shapes: ['circle'], origin: { x: 0.5, y: 0.5 } });
     setTimeout(() => {
-      confetti({
-        ...defaults,
-        particleCount: 20,
-        scalar: 0.8,
-        shapes: ['circle'],
-        origin: { x: 0.3, y: 0.6 },
-      });
-      confetti({
-        ...defaults,
-        particleCount: 20,
-        scalar: 0.8,
-        shapes: ['circle'],
-        origin: { x: 0.7, y: 0.6 },
-      });
+      confetti({ ...defaults, particleCount: 20, scalar: 0.8, shapes: ['circle'], origin: { x: 0.3, y: 0.6 } });
+      confetti({ ...defaults, particleCount: 20, scalar: 0.8, shapes: ['circle'], origin: { x: 0.7, y: 0.6 } });
     }, 150);
   }, []);
 
   const openBox = useCallback(() => {
     if (boxState !== 'idle') return;
-
     setBoxState('shaking');
-
     setTimeout(() => {
       setBoxState('opening');
-
       setTimeout(() => {
         const memory = getRandomMemory();
         setCurrentMemory(memory);
         setBoxState('revealed');
         setOpenedCount(prev => prev + 1);
+        setSlideKey(0);
         triggerConfetti();
       }, 600);
     }, 800);
@@ -94,57 +83,47 @@ export default function MemoryBoxPage() {
     setCurrentMemory(null);
   }, []);
 
-  // 自动模式逻辑
+  // 自动模式：revealed 后直接 crossfade 到下一张，不回到盲盒
   useEffect(() => {
-    if (openMode === 'auto' && boxState === 'revealed') {
-      autoTimerRef.current = setTimeout(() => {
-        handleReset();
-      }, autoInterval * 1000);
-    }
+    if (openMode !== 'auto' || boxState !== 'revealed') return;
 
-    return () => {
-      if (autoTimerRef.current) {
-        clearTimeout(autoTimerRef.current);
-      }
-    };
-  }, [openMode, boxState, autoInterval, handleReset]);
+    autoTimerRef.current = setTimeout(() => {
+      const memory = getRandomMemory();
+      setCurrentMemory(memory);
+      setSlideKey(prev => prev + 1);
+      setOpenedCount(prev => prev + 1);
+    }, autoInterval * 1000);
 
-  // 自动模式下，idle 状态自动开盒
+    return () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current); };
+  }, [openMode, boxState, autoInterval, slideKey]);
+
+  // 自动模式下，idle 状态自动开盒（首次）
   useEffect(() => {
     if (openMode === 'auto' && boxState === 'idle') {
-      const timer = setTimeout(() => {
-        openBox();
-      }, 800);
+      const timer = setTimeout(() => openBox(), 800);
       return () => clearTimeout(timer);
     }
   }, [openMode, boxState, openBox]);
 
+  // 切回手动模式时不重置卡片
+  // 切到自动模式时如果已有卡片，直接开始轮播
+
   return (
     <div className="min-h-screen w-full relative overflow-x-hidden overflow-y-auto bg-night-900 flex flex-col items-center">
-      {/* 顶部占位符，防止导航栏遮挡 */}
       <div className="w-full h-24 md:h-28 flex-shrink-0" />
 
-      {/* 背景图层 */}
+      {/* 背景 */}
       <div className="absolute inset-0 bg-gradient-radial from-night-600 via-night-900 to-night-900" />
-      
-      {/* 动态星空背景 — 使用预计算数据 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {BG_STARS.map((star, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-white"
-            style={{
-              left: `${star.left}%`,
-              top: `${star.top}%`,
-              width: star.size + 'px',
-              height: star.size + 'px',
-              opacity: star.opacity,
-            }}
+            style={{ left: `${star.left}%`, top: `${star.top}%`, width: star.size + 'px', height: star.size + 'px', opacity: star.opacity }}
             animate={{ opacity: [0.1, 0.8, 0.1], scale: [1, 1.2, 1] }}
             transition={{ duration: star.dur, repeat: Infinity, delay: star.delay }}
           />
         ))}
-
         {BG_HEARTS.map((h, i) => (
           <motion.div
             key={`heart-${i}`}
@@ -160,10 +139,7 @@ export default function MemoryBoxPage() {
 
       {/* 头部 */}
       <header className="relative z-10 pb-6 text-center px-4 w-full max-w-lg mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl md:text-4xl font-elegant gradient-text mb-2 text-glow-pink">
             回忆盲盒
           </h1>
@@ -235,7 +211,7 @@ export default function MemoryBoxPage() {
       <main className="relative z-10 flex-1 w-full max-w-4xl mx-auto flex flex-col items-center justify-center px-4 pb-20">
         <AnimatePresence mode="wait">
           {boxState !== 'revealed' ? (
-            // 盲盒状态
+            /* ===== 盲盒状态 ===== */
             <motion.div
               key="box"
               className="flex flex-col items-center"
@@ -243,40 +219,26 @@ export default function MemoryBoxPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8, y: -50 }}
             >
-              {/* 盲盒主体 - 神秘星光宝盒 */}
               <motion.div
                 className={`relative group ${openMode === 'manual' ? 'cursor-pointer' : ''}`}
                 onClick={openMode === 'manual' ? openBox : undefined}
                 animate={
                   boxState === 'shaking'
-                    ? {
-                        rotate: [-8, 8, -8, 8, -4, 4, 0],
-                        scale: [1, 1.05, 0.95, 1.05, 1],
-                      }
+                    ? { rotate: [-8, 8, -8, 8, -4, 4, 0], scale: [1, 1.05, 0.95, 1.05, 1] }
                     : boxState === 'opening'
                     ? { scale: [1, 1.1, 0], opacity: [1, 1, 0] }
-                    : { y: [0, -15, 0] } // 悬浮呼吸动画
+                    : { y: [0, -15, 0] }
                 }
-                transition={{
-                  duration: boxState === 'shaking' ? 0.8 : 0.6,
-                  y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
-                }}
+                transition={{ duration: boxState === 'shaking' ? 0.8 : 0.6, y: { duration: 4, repeat: Infinity, ease: "easeInOut" } }}
                 whileHover={boxState === 'idle' && openMode === 'manual' ? { scale: 1.05 } : {}}
                 whileTap={boxState === 'idle' && openMode === 'manual' ? { scale: 0.97 } : {}}
               >
-                {/* 外层光晕 */}
                 <div className="absolute -inset-10 bg-gradient-to-r from-love-pink/30 via-star-gold/20 to-love-rose/30 rounded-full blur-3xl animate-pulse" />
-
-                {/* 宝盒容器 */}
                 <div className="relative w-48 h-48 md:w-64 md:h-64">
-                  {/* 盒子背景 - 玻璃球 */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 shadow-[0_0_30px_rgba(255,105,180,0.2)] overflow-hidden">
-                    {/* 内部流光 */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-love-pink/20 via-transparent to-star-gold/20 animate-spin-slow" style={{ animationDuration: '10s' }} />
-                    
-                    {/* 问号图标 */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <motion.span 
+                      <motion.span
                         className="text-6xl md:text-8xl filter drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]"
                         animate={{ rotateY: [0, 180, 360] }}
                         transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
@@ -284,33 +246,21 @@ export default function MemoryBoxPage() {
                         {boxState === 'idle' ? '🎁' : boxState === 'shaking' ? '✨' : '⭐'}
                       </motion.span>
                     </div>
-
-                    {/* 高光反射 */}
                     <div className="absolute top-4 left-8 w-16 h-8 bg-white/20 rounded-full blur-xl rotate-[-45deg]" />
                   </div>
-
-                  {/* 环绕粒子 */}
                   {[...Array(6)].map((_, i) => (
-                     <motion.div
-                       key={i}
-                       className="absolute w-2 h-2 rounded-full bg-star-gold"
-                       style={{ top: '50%', left: '50%' }}
-                       animate={{
-                         x: Math.cos(i * 60 * (Math.PI / 180)) * 100,
-                         y: Math.sin(i * 60 * (Math.PI / 180)) * 100,
-                         opacity: [0, 1, 0],
-                         scale: [0.5, 1.2, 0.5],
-                       }}
-                       transition={{
-                         duration: 3,
-                         repeat: Infinity,
-                         delay: i * 0.2,
-                         ease: "easeInOut"
-                       }}
-                     />
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 rounded-full bg-star-gold"
+                      style={{ top: '50%', left: '50%' }}
+                      animate={{
+                        x: Math.cos(i * 60 * (Math.PI / 180)) * 100,
+                        y: Math.sin(i * 60 * (Math.PI / 180)) * 100,
+                        opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5],
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
+                    />
                   ))}
-                  
-                  {/* 悬浮装饰 */}
                   <motion.div
                     className="absolute -top-2 -right-2 text-yellow-300 text-lg"
                     animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
@@ -320,17 +270,10 @@ export default function MemoryBoxPage() {
                   </motion.div>
                 </div>
               </motion.div>
-
-              {/* 提示文字 */}
               <motion.p
                 className="mt-10 text-white/60 text-base font-light tracking-widest"
-                animate={{
-                  opacity: boxState === 'idle' ? [0.5, 1, 0.5] : 1,
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: boxState === 'idle' ? Infinity : 0,
-                }}
+                animate={{ opacity: boxState === 'idle' ? [0.5, 1, 0.5] : 1 }}
+                transition={{ duration: 2, repeat: boxState === 'idle' ? Infinity : 0 }}
               >
                 {boxState === 'idle' && openMode === 'manual' && '点击开启随机回忆'}
                 {boxState === 'idle' && openMode === 'auto' && '即将开启...'}
@@ -339,80 +282,103 @@ export default function MemoryBoxPage() {
               </motion.p>
             </motion.div>
           ) : (
-            // 显示回忆卡片 - 重新设计
+            /* ===== 回忆卡片 — 沉浸式播放 ===== */
             <motion.div
-              key="card"
-              className="flex flex-col items-center w-full max-w-md px-4"
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -50, scale: 0.9 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+              key="card-wrapper"
+              className="flex flex-col items-center w-full max-w-lg px-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
             >
-              {/* 回忆卡片 */}
-              <div className="w-full bg-white/5 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative group">
-                {/* 卡片辉光背景 */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-                
-                {/* 图片容器 — 使用 4/3 比例适配风景照 */}
-                <div className="relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden bg-night-800">
-                  <motion.img
-                    src={currentMemory?.image}
-                    alt="回忆"
-                    className="w-full h-full object-cover"
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                  />
-
-                  {/* 底部渐变遮罩 */}
-                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-night-900 via-night-900/50 to-transparent" />
-
-                  {/* 自动模式进度指示 */}
-                  {openMode === 'auto' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-star-gold to-love-pink"
-                        initial={{ width: '100%' }}
-                        animate={{ width: '0%' }}
-                        transition={{ duration: autoInterval, ease: 'linear' }}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`slide-${slideKey}`}
+                  className="w-full"
+                  initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                  transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+                >
+                  <div className="w-full rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative">
+                    {/* 照片区域 — Ken Burns 动效 */}
+                    <div className="relative aspect-[3/4] overflow-hidden bg-night-800">
+                      <motion.img
+                        src={currentMemory?.image}
+                        alt="回忆"
+                        className="w-full h-full object-cover"
+                        initial={{ scale: kb.scale[0], x: kb.x[0], y: kb.y[0] }}
+                        animate={{ scale: kb.scale[1], x: kb.x[1], y: kb.y[1] }}
+                        transition={{ duration: autoInterval + 1.5, ease: 'linear' }}
                       />
-                    </div>
-                  )}
-                </div>
 
-                {/* 文字内容 */}
-                <div className="relative p-6 -mt-16 text-center">
-                  <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6" />
-                  <motion.p
-                    className="text-white/90 text-lg md:text-xl leading-relaxed font-light font-romantic"
+                      {/* 暗角 */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%)' }}
+                      />
+
+                      {/* 底部渐变遮罩 + 文字 */}
+                      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
+                      <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 pointer-events-none">
+                        {/* 分类标签 */}
+                        <motion.div
+                          className="flex items-center gap-2 mb-4"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3, duration: 0.5 }}
+                        >
+                          <span className="text-xl">{currentMemory?.emoji}</span>
+                          <span className="text-white/50 text-xs tracking-widest uppercase font-medium">
+                            {currentMemory?.category}
+                          </span>
+                        </motion.div>
+
+                        {/* 文案 */}
+                        <motion.p
+                          className="text-white/90 text-lg md:text-xl leading-relaxed font-romantic"
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5, duration: 0.6, ease: 'easeOut' }}
+                        >
+                          {currentMemory?.text}
+                        </motion.p>
+                      </div>
+
+                      {/* 自动模式进度条 */}
+                      {openMode === 'auto' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 z-10">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-star-gold/70 to-love-pink/70"
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: autoInterval, ease: 'linear' }}
+                            key={`prog-${slideKey}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* 手动模式操作按钮 */}
+              {openMode === 'manual' && (
+                <div className="flex items-center gap-4 mt-8">
+                  <motion.button
+                    className="px-8 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-medium shadow-lg hover:bg-white/20 transition-all group relative overflow-hidden"
+                    onClick={handleReset}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.3 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {currentMemory?.text}
-                  </motion.p>
-                  
-                  {/* 装饰符号 */}
-                  <div className="mt-4 text-love-pink/50 text-xl">❦</div>
+                    <span className="relative z-10 flex items-center gap-2">
+                      再开一个 <span className="text-love-pink">💝</span>
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-love-pink/20 to-star-gold/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </motion.button>
                 </div>
-              </div>
-
-              {/* 操作按钮 - 仅手动模式显示 */}
-              {openMode === 'manual' && (
-                <motion.button
-                  className="mt-8 px-8 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-medium shadow-lg hover:bg-white/20 transition-all group relative overflow-hidden"
-                  onClick={handleReset}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    再开一个 <span className="text-love-pink">💝</span>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-love-pink/20 to-star-gold/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </motion.button>
               )}
             </motion.div>
           )}

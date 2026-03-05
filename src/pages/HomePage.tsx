@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { weddingPhotos } from '../data/galleryData';
+import AutoSlideshow from '../components/common/AutoSlideshow';
 
 // 获取随机照片
 const getRandomPhoto = () => {
@@ -48,6 +49,7 @@ const HomePage = () => {
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(getRandomPhoto);
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
 
   // 预计算粒子（只算一次）
   const particles = useMemo(() => generateParticles(15), []);
@@ -100,7 +102,7 @@ const HomePage = () => {
   const names = '罗先生💗思宝贝';
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 relative overflow-hidden bg-night-900">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 py-20 md:py-28 relative overflow-hidden bg-night-900">
       {/* 背景图片随机轮播 */}
       <div className="absolute inset-0">
         <AnimatePresence mode="wait">
@@ -132,10 +134,10 @@ const HomePage = () => {
       </div>
 
       {/* 内容容器 */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center">
-        {/* 装饰星星 — 位置更安全，不会被裁剪 */}
+      <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center gap-0">
+        {/* 装饰星星 */}
         <motion.div
-          className="text-star-gold text-4xl md:text-5xl opacity-80 mb-6"
+          className="text-star-gold text-4xl md:text-5xl opacity-80 mb-10 md:mb-12"
           animate={{
             rotate: 360,
             scale: [1, 1.2, 1],
@@ -153,7 +155,7 @@ const HomePage = () => {
         {/* 主标题 - 名字 */}
         {showTitle && (
           <motion.h1
-            className="text-5xl md:text-7xl lg:text-8xl font-elegant mb-8 text-glow tracking-wide"
+            className="text-5xl md:text-7xl lg:text-8xl font-elegant mb-12 md:mb-16 text-glow tracking-wide leading-snug"
             initial="hidden"
             animate="visible"
             variants={titleVariants}
@@ -183,21 +185,21 @@ const HomePage = () => {
             transition={{ duration: 1, delay: 0.2 }}
             className="flex flex-col items-center"
           >
-            <div className="relative mb-6">
+            <div className="relative mb-10 md:mb-14">
               <span className="absolute -left-8 -top-4 text-4xl text-white/10 font-serif">"</span>
-              <p className="text-2xl md:text-3xl text-white/90 font-romantic tracking-widest px-4">
-                Our Love Story
+              <p className="text-2xl md:text-3xl text-white/90 font-romantic tracking-widest leading-relaxed px-4">
+                Forever Love
               </p>
               <span className="absolute -right-8 -bottom-8 text-4xl text-white/10 font-serif">"</span>
             </div>
 
-            <p className="text-base md:text-lg text-white/70 mb-10 font-light tracking-wider">
+            <p className="text-base md:text-lg text-white/70 mb-14 md:mb-16 font-light tracking-wider leading-loose">
               从青涩相遇到携手同行，记录我们爱的每一个瞬间
             </p>
 
-            {/* 纪念日卡片 — 自适应换行 + 天数计算 */}
+            {/* 纪念日卡片 */}
             <motion.div
-              className="glass-card px-5 md:px-8 py-3 rounded-2xl md:rounded-full mb-12 flex flex-wrap items-center justify-center gap-2 md:gap-4 border border-white/10 max-w-sm md:max-w-none"
+              className="glass-card px-5 md:px-8 py-3.5 rounded-2xl md:rounded-full mb-16 md:mb-20 flex flex-wrap items-center justify-center gap-2 md:gap-4 border border-white/10 max-w-sm md:max-w-none"
               whileHover={{ scale: 1.05, borderColor: 'rgba(255,105,180,0.3)' }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -222,6 +224,7 @@ const HomePage = () => {
         {/* 开始按钮 */}
         {showButton && (
           <motion.div
+            className="flex flex-col items-center gap-5"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.6, type: "spring" }}
@@ -250,6 +253,27 @@ const HomePage = () => {
                 </span>
               </motion.button>
             </Link>
+
+            {/* 沉浸式回忆播放按钮 */}
+            <motion.button
+              className="group relative px-10 py-4 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition-colors duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsSlideshowOpen(true)}
+            >
+              {/* 玻璃背景 */}
+              <div className="absolute inset-0 bg-white/5 backdrop-blur-md" />
+
+              <span className="relative z-10 text-white/90 font-light text-base md:text-lg flex items-center gap-3 tracking-wider">
+                <motion.span
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  ▶
+                </motion.span>
+                沉浸式回忆播放
+              </span>
+            </motion.button>
           </motion.div>
         )}
 
@@ -299,6 +323,13 @@ const HomePage = () => {
           {p.symbol}
         </motion.div>
       ))}
+
+      {/* 沉浸式回忆播放 */}
+      <AnimatePresence>
+        {isSlideshowOpen && (
+          <AutoSlideshow onClose={() => setIsSlideshowOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

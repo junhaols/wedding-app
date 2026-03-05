@@ -44,6 +44,18 @@ const MusicPlayer = () => {
     });
   }, [musicVolume]);
 
+  // 自动播放：页面加载后尝试初始化并播放
+  useEffect(() => {
+    if (isMusicPlaying && !howlInitializedRef.current) {
+      initHowl();
+      requestAnimationFrame(() => {
+        if (soundRef.current && !soundRef.current.playing()) {
+          soundRef.current.play();
+        }
+      });
+    }
+  }, [isMusicPlaying, initHowl]);
+
   // 清理
   useEffect(() => {
     return () => {

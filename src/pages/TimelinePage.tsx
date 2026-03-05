@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { storySlides } from '../data/timelineData';
 
@@ -14,6 +14,391 @@ function generateStars(count: number): StarData[] {
   }));
 }
 const STAR_DATA = generateStars(40);
+
+// Ken Burns 动画预设
+const kenBurnsPresets = [
+  { scale: [1, 1.12], x: [0, -20], y: [0, -10] },
+  { scale: [1.1, 1], x: [20, 0], y: [10, 0] },
+  { scale: [1, 1.08], x: [0, 15], y: [0, 0] },
+  { scale: [1.08, 1], x: [-15, 0], y: [0, 5] },
+  { scale: [1, 1.1], x: [0, 0], y: [0, -15] },
+  { scale: [1.1, 1.02], x: [10, -10], y: [-5, 5] },
+] as const;
+
+type Phase = 'chapter-intro' | 'photo' | 'fade-black';
+
+const CHAPTER_INTRO_DURATION = 2500;
+const FADE_BLACK_DURATION = 500;
+
+// 根据图片数量动态计算停留时长
+function getPhotoDuration(count: number): number {
+  return 5000 + Math.min(count - 1, 8) * 500; // 5s ~ 9s
+}
+
+// 将 n 张图片拆成 2 或 3 行，每行均匀分配
+function splitIntoRows(n: number): number[] {
+  const rowCount = n <= 8 ? 2 : 3;
+  const base = Math.floor(n / rowCount);
+  const extra = n % rowCount;
+  return Array.from({ length: rowCount }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+function randomKbIndices(count: number): number[] {
+  return Array.from({ length: count }, () => Math.floor(Math.random() * kenBurnsPresets.length));
+}
+
+// 单张 Ken Burns 图片单元
+const KenBurnsCell = ({ src, kbIdx, duration, className }: {
+  src: string; kbIdx: number; duration: number; className?: string;
+}) => {
+  const kb = kenBurnsPresets[kbIdx % kenBurnsPresets.length];
+  return (
+    <div className={`overflow-hidden relative ${className || ''}`}>
+      <motion.img
+        src={src}
+        alt=""
+        className="w-full h-full object-cover"
+        initial={{ scale: kb.scale[0], x: kb.x[0], y: kb.y[0] }}
+        animate={{ scale: kb.scale[1], x: kb.x[1], y: kb.y[1] }}
+        transition={{ duration, ease: 'linear' }}
+      />
+    </div>
+  );
+};
+
+// 整章照片一次性布局
+const ChapterPhotoLayout = ({ images, kbIndices, duration }: {
+  images: string[]; kbIndices: number[]; duration: number;
+}) => {
+  const n = images.length;
+
+  if (n === 1) {
+    return <KenBurnsCell src={images[0]} kbIdx={kbIndices[0]} duration={duration} className="absolute inset-0" />;
+  }
+  if (n === 2) {
+    return (
+      <div className="absolute inset-0 flex gap-[3px]">
+        <KenBurnsCell src={images[0]} kbIdx={kbIndices[0]} duration={duration} className="flex-1" />
+        <KenBurnsCell src={images[1]} kbIdx={kbIndices[1]} duration={duration} className="flex-1" />
+      </div>
+    );
+  }
+  if (n === 3) {
+    return (
+      <div className="absolute inset-0 flex gap-[3px]">
+        <KenBurnsCell src={images[0]} kbIdx={kbIndices[0]} duration={duration} className="w-[58%]" />
+        <div className="w-[42%] flex flex-col gap-[3px]">
+          <KenBurnsCell src={images[1]} kbIdx={kbIndices[1]} duration={duration} className="flex-1" />
+          <KenBurnsCell src={images[2]} kbIdx={kbIndices[2]} duration={duration} className="flex-1" />
+        </div>
+      </div>
+    );
+  }
+  if (n === 4) {
+    return (
+      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[3px]">
+        {images.map((img, i) => (
+          <KenBurnsCell key={i} src={img} kbIdx={kbIndices[i]} duration={duration} />
+        ))}
+      </div>
+    );
+  }
+
+  // n >= 5: 按行均匀排列
+  const rowSizes = splitIntoRows(n);
+  let idx = 0;
+  return (
+    <div className="absolute inset-0 flex flex-col gap-[3px]">
+      {rowSizes.map((size, rowIdx) => {
+        const start = idx;
+        idx += size;
+        return (
+          <div key={rowIdx} className="flex-1 flex gap-[3px] min-h-0">
+            {images.slice(start, start + size).map((img, i) => (
+              <KenBurnsCell
+                key={i}
+                src={img}
+                kbIdx={kbIndices[start + i]}
+                duration={duration}
+                className="flex-1 min-w-0"
+              />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// 全屏沉浸式故事幻灯片
+const StorySlideshow = ({ onClose }: { onClose: () => void }) => {
+  const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
+  const [phase, setPhase] = useState<Phase>('chapter-intro');
+  const [isPaused, setIsPaused] = useState(false);
+  const [kbIndices, setKbIndices] = useState<number[]>(() => randomKbIndices(12));
+  const timerRef = useRef<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  const chapter = storySlides[currentChapterIdx];
+  const photoDuration = chapter ? getPhotoDuration(chapter.images.length) : 5000;
+
+  const clearTimers = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+  }, []);
+
+  // 进度条动画
+  useEffect(() => {
+    if (isPaused) return;
+    const duration = phase === 'chapter-intro' ? CHAPTER_INTRO_DURATION : phase === 'photo' ? photoDuration : FADE_BLACK_DURATION;
+    const start = Date.now();
+    setProgress(0);
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      setProgress(Math.min(elapsed / duration, 1));
+      if (elapsed < duration) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [phase, currentChapterIdx, isPaused, photoDuration]);
+
+  // 自动推进：chapter-intro → photo → fade-black → 下一章
+  useEffect(() => {
+    if (isPaused) return;
+    clearTimers();
+    if (!chapter) return;
+
+    if (phase === 'chapter-intro') {
+      timerRef.current = window.setTimeout(() => {
+        setKbIndices(randomKbIndices(chapter.images.length));
+        setPhase('photo');
+      }, CHAPTER_INTRO_DURATION);
+    } else if (phase === 'photo') {
+      timerRef.current = window.setTimeout(() => {
+        if (currentChapterIdx + 1 < storySlides.length) {
+          setPhase('fade-black');
+        } else {
+          onClose();
+        }
+      }, photoDuration);
+    } else if (phase === 'fade-black') {
+      timerRef.current = window.setTimeout(() => {
+        setCurrentChapterIdx(prev => prev + 1);
+        setPhase('chapter-intro');
+      }, FADE_BLACK_DURATION);
+    }
+    return clearTimers;
+  }, [phase, currentChapterIdx, isPaused, clearTimers, onClose, chapter, photoDuration]);
+
+  // 键盘控制
+  const jumpChapter = useCallback((dir: 1 | -1) => {
+    const next = currentChapterIdx + dir;
+    if (next >= 0 && next < storySlides.length) {
+      clearTimers();
+      setCurrentChapterIdx(next);
+      setPhase('chapter-intro');
+    }
+  }, [currentChapterIdx, clearTimers]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === ' ') { e.preventDefault(); setIsPaused(p => !p); }
+      else if (e.key === 'ArrowRight') jumpChapter(1);
+      else if (e.key === 'ArrowLeft') jumpChapter(-1);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [jumpChapter, onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  if (!chapter) return null;
+  const overallProgress = (currentChapterIdx + (phase === 'photo' ? 0.5 : phase === 'fade-black' ? 1 : 0)) / storySlides.length;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 bg-black"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* 章节标题卡 */}
+      <AnimatePresence mode="wait">
+        {phase === 'chapter-intro' && (
+          <motion.div
+            key={`intro-${currentChapterIdx}`}
+            className="absolute inset-0 flex flex-col items-center justify-center z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.span
+              className="text-white/40 text-xs md:text-sm font-bold tracking-[0.4em] uppercase mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              CHAPTER · {chapter.chapter}
+            </motion.span>
+            <motion.h2
+              className="text-4xl md:text-6xl lg:text-7xl font-elegant bg-clip-text text-transparent bg-gradient-to-r from-star-gold via-love-pink to-star-light text-center px-8 leading-tight"
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
+            >
+              {chapter.title}
+            </motion.h2>
+            {chapter.year && (
+              <motion.span
+                className="mt-6 text-white/30 text-sm font-mono tracking-widest"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+              >
+                {chapter.year}
+              </motion.span>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 照片展示：一次性呈现所有照片 */}
+      <AnimatePresence mode="wait">
+        {phase === 'photo' && (
+          <motion.div
+            key={`photo-${currentChapterIdx}`}
+            className="absolute inset-0 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <ChapterPhotoLayout
+              images={chapter.images}
+              kbIndices={kbIndices}
+              duration={photoDuration / 1000}
+            />
+
+            {/* 底部渐变遮罩 + 文字 */}
+            <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none z-10" />
+            <div className="absolute inset-x-0 bottom-0 pb-20 md:pb-24 px-8 md:px-16 pointer-events-none z-10">
+              <motion.h3
+                className="text-2xl md:text-4xl lg:text-5xl font-elegant bg-clip-text text-transparent bg-gradient-to-r from-star-gold to-star-light mb-4 leading-tight"
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.7, ease: 'easeOut' }}
+              >
+                {chapter.title}
+              </motion.h3>
+              {chapter.quote && (
+                <motion.p
+                  className="text-white/60 font-romantic italic text-base md:text-xl max-w-2xl leading-relaxed"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.7, ease: 'easeOut' }}
+                >
+                  {chapter.quote}
+                </motion.p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* fade-black 过渡 */}
+      <AnimatePresence>
+        {phase === 'fade-black' && (
+          <motion.div
+            key="fade-black"
+            className="absolute inset-0 bg-black z-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 暗角 */}
+      <div
+        className="absolute inset-0 pointer-events-none z-10"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%)' }}
+      />
+
+      {/* 控制层 */}
+      <div className="absolute inset-0 z-30 pointer-events-none">
+        <button
+          className="pointer-events-auto absolute top-4 right-4 md:top-6 md:right-6 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/40 hover:text-white/80 transition-colors"
+          onClick={onClose}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <button
+          className="pointer-events-auto absolute bottom-8 left-1/2 -translate-x-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/40 hover:text-white/80 transition-colors"
+          onClick={() => setIsPaused(p => !p)}
+          title={isPaused ? '播放 (空格键)' : '暂停 (空格键)'}
+        >
+          {isPaused ? (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          ) : (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+          )}
+        </button>
+
+        <div className="pointer-events-auto absolute bottom-8 right-6 md:right-8 text-white/30 text-xs font-mono tracking-wider">
+          {currentChapterIdx + 1} / {storySlides.length}
+        </div>
+
+        <div className="hidden md:flex pointer-events-auto absolute left-6 top-1/2 -translate-y-1/2">
+          <button
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-sm text-white/20 hover:text-white/60 transition-colors"
+            onClick={() => jumpChapter(-1)}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+        <div className="hidden md:flex pointer-events-auto absolute right-6 top-1/2 -translate-y-1/2">
+          <button
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-sm text-white/20 hover:text-white/60 transition-colors"
+            onClick={() => jumpChapter(1)}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* 底部进度条 */}
+      <div className="absolute bottom-0 left-0 right-0 z-30">
+        <div className="h-[2px] bg-white/5">
+          <div
+            className="h-full bg-gradient-to-r from-star-gold/40 to-love-pink/40 transition-all duration-300"
+            style={{ width: `${overallProgress * 100}%` }}
+          />
+        </div>
+        <div className="h-[1px] bg-transparent">
+          <div
+            className="h-full bg-white/20"
+            style={{ width: `${progress * 100}%`, transition: 'none' }}
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 // 安全获取副标题的辅助函数
 const getSafeSubtitle = (subtitle: string | undefined) => {
@@ -249,6 +634,7 @@ const MobileStoryNode = ({ slide }: { slide: typeof storySlides[0], index: numbe
 };
 
 export default function TimelinePage() {
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -302,6 +688,22 @@ export default function TimelinePage() {
           <p className="text-white/60 text-sm md:text-lg font-light tracking-[0.3em] uppercase">
             The Journey of Our Love
           </p>
+
+          {/* 自动播放按钮 */}
+          <motion.button
+            className="mt-8 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-sm backdrop-blur-sm"
+            onClick={() => setIsSlideshowOpen(true)}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.6 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            沉浸播放
+          </motion.button>
         </motion.div>
         
         {/* 向下滚动提示 */}
@@ -363,21 +765,16 @@ export default function TimelinePage() {
                 </span>
               </motion.button>
             </Link>
-            <Link to="/proposal">
-              <motion.button
-                className="px-10 py-4 rounded-full bg-gradient-to-r from-love-pink to-love-rose text-white font-bold text-base shadow-[0_0_40px_rgba(255,105,180,0.3)] group relative overflow-hidden border border-white/10"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  💍 进入爱的告白 <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </span>
-                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </motion.button>
-            </Link>
           </div>
         </motion.div>
       </div>
+
+      {/* 沉浸式故事幻灯片 */}
+      <AnimatePresence>
+        {isSlideshowOpen && (
+          <StorySlideshow onClose={() => setIsSlideshowOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

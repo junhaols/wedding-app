@@ -7,8 +7,8 @@ const navItems = [
   { path: '/timeline', label: '我们的故事', icon: '📖' },
   { path: '/gallery', label: '美好回忆', icon: '📷' },
   { path: '/memory-box', label: '回忆盲盒', icon: '🎁' },
-  { path: '/proposal', label: '爱的告白', icon: '💍' },
   { path: '/fireworks', label: '烟花情书', icon: '🎆' },
+  { path: '/wedding-photos', label: '婚纱照', icon: '💒' },
 ];
 
 const Navigation = () => {
@@ -16,7 +16,7 @@ const Navigation = () => {
   const location = useLocation();
 
   // 在美好回忆页面隐藏导航，提供沉浸式体验
-  if (location.pathname === '/gallery' || location.pathname === '/fireworks') {
+  if (location.pathname === '/gallery' || location.pathname === '/fireworks' || location.pathname === '/wedding-photos') {
     return null;
   }
 
