@@ -9,32 +9,33 @@
   --color-night-700: #1a1a3e;
   --color-night-600: #252550;
 
-  --color-star-gold: #ffd700;
-  --color-star-light: #fffacd;
-  --color-star-silver: #c0c0c0;
-  
-  --color-love-pink: #ff69b4;
-  --color-love-rose: #ff1493;
-  --color-love-light: #fff0f5;
-  --color-love-purple: #9370db;
-  
-  --color-aurora-green: #00ffcc;
-  --color-aurora-blue: #00bfff;
+  /* 香槟金 — 比纯金柔和高级，烛光质感 */
+  --color-star-gold: #f0d28e;
+  --color-star-light: #fdf3da;
+  --color-star-silver: #ccd6e6;
 
+  /* 玫瑰粉 — 低饱和度的浪漫粉 */
+  --color-love-pink: #ff96b5;
+  --color-love-rose: #f25f88;
+  --color-love-light: #fff0f5;
+  --color-love-purple: #a78bfa;
+
+  --color-aurora-green: #5eead4;
+  --color-aurora-blue: #7dd3fc;
+
+  --font-romantic: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+  --font-elegant: 'Ma Shan Zheng', cursive;
   --font-family-romantic: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
   --font-family-elegant: 'Ma Shan Zheng', cursive;
-  
-  --shadow-glow-gold: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
-  --shadow-glow-pink: 0 0 10px rgba(255, 105, 180, 0.5), 0 0 20px rgba(255, 105, 180, 0.3);
+
+  --shadow-glow-gold: 0 0 12px rgba(240, 210, 142, 0.45), 0 0 32px rgba(240, 210, 142, 0.2);
+  --shadow-glow-pink: 0 0 12px rgba(255, 150, 181, 0.45), 0 0 32px rgba(255, 150, 181, 0.2);
 }
 
-/* 全局样式 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+/* 全局样式
+   注意：不要在这里写未分层的 `* { margin:0; padding:0 }` 重置——
+   未分层样式优先级高于 @layer，会覆盖所有 Tailwind 间距工具类。
+   Tailwind v4 的 preflight 已包含等价重置。 */
 html {
   scroll-behavior: smooth;
 }
@@ -75,40 +76,53 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
+  background: rgba(240, 210, 142, 0.3);
   border-radius: 3px;
   transition: background 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 105, 180, 0.6);
+  background: rgba(255, 150, 181, 0.6);
+}
+
+/* 选中文字也带浪漫色 */
+::selection {
+  background: rgba(255, 150, 181, 0.35);
+  color: #fff;
 }
 
 /* ---------------- 视觉特效工具类 ---------------- */
 
-/* 文字发光效果 */
+/* 文字发光效果 — 柔和的烛光感 */
 .text-glow {
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 14px rgba(240, 210, 142, 0.4), 0 0 40px rgba(240, 210, 142, 0.18);
 }
 
 .text-glow-pink {
-  text-shadow: 0 0 10px rgba(255, 105, 180, 0.5), 0 0 20px rgba(255, 105, 180, 0.3);
+  text-shadow: 0 0 14px rgba(255, 150, 181, 0.4), 0 0 40px rgba(255, 150, 181, 0.18);
 }
 
-/* 渐变文字 */
+/* 渐变文字 — 香槟金 → 玫瑰粉 → 象牙白 流转 */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-star-gold), var(--color-love-pink), var(--color-love-light));
+  background: linear-gradient(120deg,
+    #f0d28e 0%, #ffc9da 28%, #fdf3da 52%, #ffb3c8 76%, #f0d28e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  background-size: 200% auto;
-  animation: shine 5s linear infinite;
+  background-size: 250% auto;
+  animation: shine 8s linear infinite;
 }
 
 @keyframes shine {
   to {
-    background-position: 200% center;
+    background-position: 250% center;
   }
+}
+
+/* 按钮背景流光（HomePage CTA 等使用 animate-[gradient_...] ） */
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* 玻璃态效果 (Glassmorphism) */
@@ -194,13 +208,30 @@ body {
 
 /* 流光边框 */
 @keyframes border-flow {
-  0% { border-color: rgba(255, 215, 0, 0.3); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
-  50% { border-color: rgba(255, 105, 180, 0.5); box-shadow: 0 0 20px rgba(255, 105, 180, 0.3); }
-  100% { border-color: rgba(255, 215, 0, 0.3); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
+  0% { border-color: rgba(240, 210, 142, 0.3); box-shadow: 0 0 10px rgba(240, 210, 142, 0.1); }
+  50% { border-color: rgba(255, 150, 181, 0.5); box-shadow: 0 0 20px rgba(255, 150, 181, 0.3); }
+  100% { border-color: rgba(240, 210, 142, 0.3); box-shadow: 0 0 10px rgba(240, 210, 142, 0.1); }
 }
 
 .border-glow {
   animation: border-flow 3s infinite alternate;
+}
+
+/* 极光流转 — 大面积模糊色块缓慢漂移 */
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(6vw, -4vh, 0) scale(1.12); }
+  66% { transform: translate3d(-5vw, 3vh, 0) scale(0.94); }
+}
+
+.aurora-blob {
+  animation: aurora-drift 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* 噪点纹理（内联 SVG，替代缺失的 noise.png） */
+.noise-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* ============ 高性能爱心动画 (GPU加速) ============ */
@@ -283,7 +314,7 @@ body {
 }
 
 .bg-heart-glow {
-  background: radial-gradient(circle at 50% 50%, rgba(255,105,180,0.25) 0%, transparent 50%);
+  background: radial-gradient(circle at 50% 50%, rgba(255,150,181,0.25) 0%, transparent 50%);
   animation: bg-glow 0.8s ease-in-out infinite;
   will-change: opacity;
 }

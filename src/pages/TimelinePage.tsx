@@ -514,7 +514,7 @@ const StoryNode = ({ slide, index }: { slide: typeof storySlides[0], index: numb
                 <div className="absolute inset-0 pointer-events-none mix-blend-screen">
                   <div className="absolute inset-0 bg-gradient-to-tr from-love-rose/20 via-transparent to-star-gold/20 opacity-60" />
                   {/* 模拟老电影噪点 */}
-                  <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20" />
+                  <div className="absolute inset-0 noise-texture opacity-20" />
                 </div>
               )}
             </div>
@@ -651,7 +651,7 @@ export default function TimelinePage() {
     <div ref={containerRef} className="min-h-screen bg-night-900 relative overflow-hidden">
       {/* 动态背景 */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
+        <div className="absolute inset-0 noise-texture opacity-[0.03]" />
         <div className="absolute inset-0 bg-gradient-radial from-night-800/50 via-night-900/80 to-night-950" />
         
         {/* 随滚动移动的星空 */}
@@ -685,9 +685,13 @@ export default function TimelinePage() {
           <h1 className="text-6xl md:text-8xl lg:text-9xl font-elegant gradient-text mb-8 text-glow tracking-wide">
             我们的故事
           </h1>
-          <p className="text-white/60 text-sm md:text-lg font-light tracking-[0.3em] uppercase">
-            The Journey of Our Love
-          </p>
+          <div className="flex items-center justify-center gap-3 md:gap-5">
+            <div className="h-px w-8 md:w-16 bg-gradient-to-r from-transparent to-star-gold/50" />
+            <p className="text-white/60 text-sm md:text-lg font-light tracking-[0.3em] uppercase">
+              The Journey of Our Love
+            </p>
+            <div className="h-px w-8 md:w-16 bg-gradient-to-l from-transparent to-star-gold/50" />
+          </div>
 
           {/* 自动播放按钮 */}
           <motion.button

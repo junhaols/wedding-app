@@ -109,7 +109,7 @@ const MusicPlayer = () => {
 
   return (
     <motion.div
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50"
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1, duration: 0.5 }}
@@ -165,7 +165,7 @@ const MusicPlayer = () => {
 
       {/* 播放按钮 */}
       <motion.button
-        className="w-14 h-14 rounded-full glass flex items-center justify-center group"
+        className="w-12 h-12 md:w-14 md:h-14 rounded-full glass flex items-center justify-center group"
         onClick={handleToggle}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}

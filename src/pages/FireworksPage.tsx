@@ -124,8 +124,7 @@ const A_TYPES: AmbientType[] = ['peony', 'chrysanthemum', 'willow', 'crossette',
 // ===================== TIMING (ms) =====================
 
 const T_ROCKET  = 900;
-const T_SCATTER = 650;
-const T_FORM    = 1400;
+const T_BLOOM   = 1600;   // 爆炸火星直接绽放成文字
 const T_DISPLAY = 2800;
 const T_FADE    = 900;
 const T_PAUSE   = 500;
@@ -157,7 +156,8 @@ interface ABurst {
 interface TPart {
   x: number; y: number; vx: number; vy: number;
   tx: number; ty: number;
-  sx: number; sy: number;
+  d: number;   // 每颗火星的绽放延迟（0~1 的相位偏移）
+  dr: number;  // 飞行途中的下坠量，模拟火星重力
   color: string; alpha: number;
   sz: number; shimmer: number;
   trail: number[];
@@ -167,7 +167,7 @@ interface Flash { x: number; y: number; a: number; r: number; color: string; }
 interface Ring  { x: number; y: number; r: number; mr: number; a: number; color: string; w: number; }
 interface Star  { x: number; y: number; r: number; sp: number; ph: number; }
 
-type Phase = 'idle' | 'rocket' | 'scatter' | 'form' | 'display' | 'fade';
+type Phase = 'idle' | 'rocket' | 'bloom' | 'display' | 'fade';
 
 interface S {
   line: number; phase: Phase; t: number;
@@ -190,7 +190,6 @@ const rand  = (a: number, b: number) => a + Math.random() * (b - a);
 const pick  = <T,>(a: T[]): T => a[~~(Math.random() * a.length)];
 
 function easeOutCubic(t: number)  { return 1 - (1 - t) ** 3; }
-function easeInOutQuad(t: number) { return t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; }
 
 function sampleText(text: string, fs: number, cx: number, cy: number, gap: number, maxPts = MAX_P) {
   const c = document.createElement('canvas');
@@ -226,6 +225,38 @@ function mkStars(w: number, h: number): Star[] {
     x: Math.random() * w, y: Math.random() * h,
     r: rand(.5, 1.8), sp: rand(.4, 1.8), ph: Math.random() * Math.PI * 2,
   }));
+}
+
+// 夜空：深蓝渐变 + 地平线玫瑰色余晖
+function drawSky(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.clearRect(0, 0, w, h);
+  const bg = ctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#050510');
+  bg.addColorStop(.45, '#0a0a23');
+  bg.addColorStop(.8, '#13122e');
+  bg.addColorStop(1, '#1a1535');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+  const hz = ctx.createLinearGradient(0, h * .72, 0, h);
+  hz.addColorStop(0, 'rgba(186,120,150,0)');
+  hz.addColorStop(1, 'rgba(186,120,150,0.10)');
+  ctx.fillStyle = hz; ctx.fillRect(0, h * .72, w, h * .28);
+}
+
+// 一轮带呼吸月晕的明月
+function drawMoon(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  const mx = w * .85, my = h * .15, mr = Math.min(w, h) * .042;
+  const breathe = 1 + .06 * Math.sin(t * .4);
+  const halo = ctx.createRadialGradient(mx, my, mr * .5, mx, my, mr * 4 * breathe);
+  halo.addColorStop(0, 'rgba(253,243,218,0.15)');
+  halo.addColorStop(.5, 'rgba(253,243,218,0.05)');
+  halo.addColorStop(1, 'rgba(253,243,218,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(mx, my, mr * 4 * breathe, 0, Math.PI * 2); ctx.fill();
+  const body = ctx.createRadialGradient(mx - mr * .3, my - mr * .3, mr * .1, mx, my, mr);
+  body.addColorStop(0, '#fffdf5');
+  body.addColorStop(1, '#efe0bb');
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
 }
 
 // Create an ambient firework burst
@@ -320,9 +351,11 @@ const CELEBRATION_PALETTES = [
   ['#ff007f', '#ff1493', '#ffd700', '#fff'],
 ];
 
-function mkHeartBurst(w: number, h: number): ABurst {
+function mkHeartBurst(w: number, h: number, avoidCenter = false): ABurst {
   const palette = pick(CELEBRATION_PALETTES);
-  const cx = rand(w * .15, w * .85);
+  const cx = avoidCenter
+    ? (Math.random() > .5 ? rand(w * .1, w * .28) : rand(w * .72, w * .9))
+    : rand(w * .15, w * .85);
   const cy = rand(h * .1, h * .5);
   const particles: APart[] = [];
   const n = 120;
@@ -355,10 +388,7 @@ function renderCelebration(
   ctx: CanvasRenderingContext2D, w: number, h: number, now: number,
   cs: { ambients: ABurst[]; flashes: Flash[]; rings: Ring[]; stars: Star[] },
 ) {
-  ctx.clearRect(0, 0, w, h);
-  const bg = ctx.createLinearGradient(0, 0, 0, h);
-  bg.addColorStop(0, '#050510'); bg.addColorStop(.5, '#0a0a1f'); bg.addColorStop(1, '#0f0f2d');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+  drawSky(ctx, w, h);
   const nt = now / 1000;
   for (const st of cs.stars) {
     ctx.globalAlpha = .3 + .7 * (.5 + .5 * Math.sin(nt * st.sp + st.ph));
@@ -366,6 +396,7 @@ function renderCelebration(
     ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
+  drawMoon(ctx, w, h, nt);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const ab of cs.ambients) {
     for (const p of ab.particles) {
@@ -424,6 +455,15 @@ const FireworksPage = () => {
   const [showProposalBtns, setShowProposalBtns] = useState(false);
   const [refusePos, setRefusePos] = useState({ x: 0, y: 0 });
   const proposalBtnsShown = useRef(false);
+
+  // 播放控制：暂停 + 上一句/下一句
+  const [isPaused, setIsPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const jumpRef = useRef<(dir: 1 | -1) => void>(() => {});
+  const togglePause = useCallback(() => {
+    pausedRef.current = !pausedRef.current;
+    setIsPaused(pausedRef.current);
+  }, []);
 
   const startShow = useCallback(() => setShow('playing'), []);
   const replay = useCallback(() => {
@@ -487,15 +527,14 @@ const FireworksPage = () => {
       s.rTrail = [];
 
       s.parts = pts.map(p => {
-        const a = Math.random() * Math.PI * 2;
-        const spd = rand(3, 8);
         const pSz = isFinale ? rand(2.2, 3.8) : rand(1.5, 2.8);
         return {
           x: s.ex, y: s.ey,
-          vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          vx: rand(-.5, .5), vy: rand(-1.2, -.3),
           tx: p.x, ty: p.y,
-          sx: 0, sy: 0,
-          color: pick(pal), alpha: 1,
+          d: rand(0, .22),           // 错开绽放时机，更像真实火星
+          dr: rand(4, 16),           // 飞行中的重力下坠
+          color: pick(pal), alpha: 0,
           sz: pSz, shimmer: Math.random() * Math.PI * 2,
           trail: [],
         };
@@ -503,18 +542,47 @@ const FireworksPage = () => {
       setPhase('rocket');
     }
 
+    // 进入播放时重置暂停状态
+    pausedRef.current = false;
+    setIsPaused(false);
+
+    // 跳到上一句 / 下一句
+    const jump = (dir: 1 | -1) => {
+      const target = s.line + dir;
+      if (target < 0 || target >= LOVE_LETTER.length) return;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (proposalBtnsShown.current) {
+        proposalBtnsShown.current = false;
+        setShowProposalBtns(false);
+      }
+      if (pausedRef.current) { pausedRef.current = false; setIsPaused(false); }
+      s.line = target;
+      launch();
+    };
+    jumpRef.current = jump;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === ' ') { e.preventDefault(); togglePause(); }
+      else if (e.key === 'ArrowRight') jump(1);
+      else if (e.key === 'ArrowLeft') jump(-1);
+    };
+    window.addEventListener('keydown', onKey);
+
     const startTimer = setTimeout(launch, 600);
     let last = performance.now();
 
     // ==================== UPDATE ====================
 
     function update(dt: number) {
+      if (pausedRef.current) return;
       s.t += dt * 1000;
 
-      // ---- Ambient fireworks ----
+      // ---- Ambient fireworks（偶尔绽放心形烟花）----
       s.aTimer -= dt;
       if (s.aTimer <= 0 && s.ambients.length < 4) {
-        const ab = mkAmbient(W(), H(), s.phase !== 'idle');
+        const ab = Math.random() < .16
+          ? mkHeartBurst(W(), H(), s.phase !== 'idle')
+          : mkAmbient(W(), H(), s.phase !== 'idle');
         s.ambients.push(ab);
         const fp = ab.particles[0];
         if (fp) {
@@ -576,43 +644,27 @@ const FireworksPage = () => {
               for (let i = 0; i < 3; i++) s.ambients.push(mkAmbient(W(), H(), true));
             }
             s.rTrail = [];
-            setPhase('scatter');
+            setPhase('bloom');
           }
           break;
         }
 
-        case 'scatter': {
-          // Physics-based scatter: particles fly outward with gravity + drag
-          const p = clamp(s.t / T_SCATTER);
+        case 'bloom': {
+          // 爆炸火星沿径向直接冲向各自的笔画落点：
+          // 快速冲出 → 轻微过冲 → 回落定格，中途带重力下坠
+          const p = clamp(s.t / T_BLOOM);
+          const BACK = 1.4; // easeOutBack 过冲强度
           for (const pt of s.parts) {
-            // Trail during scatter
-            pt.trail.push(pt.x, pt.y);
-            if (pt.trail.length > 12) pt.trail.splice(0, 2);
-
-            const df = Math.pow(.96, dt * 60);
-            pt.vx *= df; pt.vy *= df;
-            pt.vy += .12 * dt * 60; // gravity
-            pt.vx += WIND * dt * 60;
-            pt.x += pt.vx * dt * 60;
-            pt.y += pt.vy * dt * 60;
-          }
-          if (p >= 1) {
-            // Snapshot scatter-end positions
-            for (const pt of s.parts) { pt.sx = pt.x; pt.sy = pt.y; pt.trail = []; }
-            setPhase('form');
-          }
-          break;
-        }
-
-        case 'form': {
-          const p = clamp(s.t / T_FORM);
-          const e = easeInOutQuad(p);
-          for (const pt of s.parts) {
-            // Trail during formation (light effect)
-            if (p < .8) { pt.trail.push(pt.x, pt.y); if (pt.trail.length > 8) pt.trail.splice(0, 2); }
-            pt.x = lerp(pt.sx, pt.tx, e);
-            pt.y = lerp(pt.sy, pt.ty, e);
-            pt.alpha = .5 + .5 * e;
+            const lp = clamp((p - pt.d) / (1 - pt.d));
+            if (lp <= 0) { pt.x = s.ex; pt.y = s.ey; pt.alpha = 0; continue; }
+            const e = 1 + (BACK + 1) * Math.pow(lp - 1, 3) + BACK * Math.pow(lp - 1, 2);
+            pt.x = lerp(s.ex, pt.tx, e);
+            pt.y = lerp(s.ey, pt.ty, e) + Math.sin(lp * Math.PI) * pt.dr;
+            pt.alpha = Math.min(1, lp * 5);
+            if (lp < .85) {
+              pt.trail.push(pt.x, pt.y);
+              if (pt.trail.length > 10) pt.trail.splice(0, 2);
+            }
           }
           if (p >= 1) { for (const pt of s.parts) pt.trail = []; setPhase('display'); }
           break;
@@ -691,15 +743,7 @@ const FireworksPage = () => {
 
     function render(now: number) {
       const w = W(), h = H();
-      ctx.clearRect(0, 0, w, h);
-
-      // Sky gradient
-      const bg = ctx.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, '#050510');
-      bg.addColorStop(.5, '#0a0a1f');
-      bg.addColorStop(1, '#0f0f2d');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
+      drawSky(ctx, w, h);
 
       // Stars
       const nt = now / 1000;
@@ -709,6 +753,7 @@ const FireworksPage = () => {
         ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
+      drawMoon(ctx, w, h, nt);
 
       // ---- Ambient firework trails + particles (additive) ----
       ctx.save();
@@ -837,7 +882,7 @@ const FireworksPage = () => {
         }
 
         // Glow pass
-        if (s.phase === 'display' || s.phase === 'form') {
+        if (s.phase === 'display' || s.phase === 'bloom') {
           for (const pt of s.parts) {
             ctx.globalAlpha = clamp(pt.alpha * .12);
             ctx.fillStyle = pt.color;
@@ -847,13 +892,13 @@ const FireworksPage = () => {
         ctx.restore();
 
         // Clear text rendering for legibility
-        if (s.phase === 'display' || (s.phase === 'form' && s.t > T_FORM * .7)) {
+        if (s.phase === 'display' || (s.phase === 'bloom' && s.t > T_BLOOM * .6)) {
           const text = LOVE_LETTER[s.line];
           if (text) {
             const isFinaleText = s.line >= LOVE_LETTER.length - 2;
             const fsBoosted = fitFont(text, w, mob(), isFinaleText ? 50 : 0);
             const mc = s.pal[0];
-            const ta = s.phase === 'display' ? (isFinaleText ? .95 : .5) : .2;
+            const ta = s.phase === 'display' ? (isFinaleText ? .95 : .68) : .2;
             ctx.save();
             ctx.font = `bold ${fsBoosted}px "Ma Shan Zheng","ZCOOL XiaoWei","Noto Serif SC",serif`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -886,7 +931,7 @@ const FireworksPage = () => {
           ctx.globalAlpha = a;
           ctx.fillStyle = pt.color;
           ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.sz, 0, Math.PI * 2); ctx.fill();
-          if (s.phase === 'display' || s.phase === 'form') {
+          if (s.phase === 'display' || s.phase === 'bloom') {
             ctx.globalAlpha = a * .55;
             ctx.fillStyle = '#fff';
             ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.sz * .4, 0, Math.PI * 2); ctx.fill();
@@ -896,12 +941,22 @@ const FireworksPage = () => {
       }
 
       // Progress
-      ctx.globalAlpha = .2;
+      ctx.globalAlpha = .25;
       ctx.fillStyle = '#fff';
       ctx.font = '12px "Noto Sans SC",sans-serif';
       ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
       ctx.fillText(`${Math.min(s.line + 1, LOVE_LETTER.length)} / ${LOVE_LETTER.length}`, w - 16, h - 16);
       ctx.globalAlpha = 1;
+
+      // 底部进度条：香槟金 → 玫瑰粉
+      const prog = Math.min(s.line / LOVE_LETTER.length, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(0, h - 3, w, 3);
+      const pg = ctx.createLinearGradient(0, 0, w * prog, 0);
+      pg.addColorStop(0, 'rgba(240,210,142,0.6)');
+      pg.addColorStop(1, 'rgba(255,150,181,0.6)');
+      ctx.fillStyle = pg;
+      ctx.fillRect(0, h - 3, w * prog, 3);
     }
 
     // ==================== LOOP ====================
@@ -920,8 +975,9 @@ const FireworksPage = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('keydown', onKey);
     };
-  }, [show]);
+  }, [show, togglePause]);
 
   // ==================== CELEBRATION FIREWORKS (30s) ====================
   useEffect(() => {
@@ -1064,7 +1120,11 @@ const FireworksPage = () => {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: .5 }}
     >
-      <canvas ref={canvasRef} className="absolute inset-0" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0"
+        onClick={() => { if (show === 'playing') jumpRef.current(1); }}
+      />
 
       <Link
         to="/"
@@ -1076,11 +1136,59 @@ const FireworksPage = () => {
       </Link>
 
       {show === 'playing' && (
-        <motion.button
-          className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/40 text-xs hover:text-white/70 transition-colors"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3 }}
-          onClick={skip}
-        >跳过</motion.button>
+        <>
+          <motion.button
+            className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/40 text-xs hover:text-white/70 transition-colors"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3 }}
+            onClick={skip}
+          >跳过</motion.button>
+
+          {/* 播放控制：上一句 / 暂停 / 下一句 */}
+          <motion.div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3 }}
+          >
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/40 hover:text-white/80 transition-colors"
+              onClick={() => jumpRef.current(-1)}
+              title="上一句 (←)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              className="w-11 h-11 flex items-center justify-center rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/50 hover:text-white/90 transition-colors"
+              onClick={togglePause}
+              title={isPaused ? '播放 (空格)' : '暂停 (空格)'}
+            >
+              {isPaused ? (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+              )}
+            </button>
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/40 hover:text-white/80 transition-colors"
+              onClick={() => jumpRef.current(1)}
+              title="下一句 (→)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </motion.div>
+
+          {/* 操作提示：出现几秒后淡出 */}
+          <motion.p
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 text-white/30 text-xs tracking-[0.25em] pointer-events-none whitespace-nowrap"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 1, 0] }}
+            transition={{ delay: 2, duration: 7, times: [0, 0.12, 0.8, 1] }}
+          >
+            点击屏幕 下一句 · 空格 暂停
+          </motion.p>
+        </>
       )}
 
       {/* Celebration overlay — romantic text */}
@@ -1107,23 +1215,72 @@ const FireworksPage = () => {
       {/* Start screen */}
       <AnimatePresence>
         {show === 'start' && (
-          <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-10"
+          <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-10 overflow-hidden"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.h2 className="text-2xl md:text-4xl font-elegant text-star-gold text-glow mb-6"
-              initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .3 }}>
+            {/* 静态夜空：星光 + 玫瑰金光晕 */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0"
+                style={{ background: 'radial-gradient(ellipse at 50% 42%, rgba(255,150,181,0.10) 0%, rgba(240,210,142,0.05) 35%, transparent 65%)' }} />
+              {[...Array(24)].map((_, i) => (
+                <motion.span
+                  key={i}
+                  className="absolute rounded-full bg-white"
+                  style={{
+                    left: `${(i * 37 + 13) % 100}%`,
+                    top: `${(i * 53 + 7) % 90}%`,
+                    width: i % 3 === 0 ? 2 : 1,
+                    height: i % 3 === 0 ? 2 : 1,
+                  }}
+                  animate={{ opacity: [0.1, 0.7, 0.1] }}
+                  transition={{ duration: 2 + (i % 5) * 0.7, repeat: Infinity, delay: (i % 7) * 0.4 }}
+                />
+              ))}
+            </div>
+
+            <motion.div
+              className="text-star-gold/80 text-3xl mb-8"
+              initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', damping: 10 }}
+            >
+              <motion.span
+                className="inline-block"
+                animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.15, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                🎆
+              </motion.span>
+            </motion.div>
+
+            <motion.h2 className="text-4xl md:text-6xl font-elegant gradient-text text-glow mb-8 tracking-wide"
+              initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .3, duration: .8 }}>
               烟花情书
             </motion.h2>
-            <motion.p className="text-white/40 text-sm mb-8"
-              initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .5 }}>
-              用漫天烟花，写一封给你的情书
-            </motion.p>
+
+            <motion.div className="flex items-center gap-3 md:gap-4 mb-12"
+              initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .5, duration: .7 }}>
+              <div className="h-px w-8 md:w-14 bg-gradient-to-r from-transparent to-star-gold/50" />
+              <p className="text-white/55 text-sm md:text-base tracking-[0.2em]">
+                用漫天烟花，写一封给你的情书
+              </p>
+              <div className="h-px w-8 md:w-14 bg-gradient-to-l from-transparent to-star-gold/50" />
+            </motion.div>
+
             <motion.button
-              className="px-8 py-3 rounded-full bg-gradient-to-r from-star-gold/20 to-love-pink/20 border border-star-gold/30 text-star-gold hover:border-star-gold/60 hover:shadow-glow-gold transition-all duration-300"
+              className="group relative px-12 py-4 rounded-full overflow-hidden shadow-[0_0_24px_rgba(240,210,142,0.25)] hover:shadow-[0_0_40px_rgba(255,150,181,0.4)] transition-shadow duration-300"
               whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
               onClick={startShow}
               initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .7 }}>
-              开始烟花秀
+              <div className="absolute inset-0 bg-gradient-to-r from-star-gold via-love-pink to-star-gold bg-[length:200%_100%] animate-[gradient_3s_ease_infinite] opacity-90 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
+              <span className="relative z-10 text-night-900 font-bold text-lg tracking-widest">
+                开始烟花秀
+              </span>
             </motion.button>
+
+            <motion.p className="mt-8 text-white/25 text-xs tracking-[0.3em]"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+              请调高音量 · 全屏观看效果最佳
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>

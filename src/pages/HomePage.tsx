@@ -22,15 +22,21 @@ interface ParticleData {
   symbol: string;
 }
 
-const SYMBOLS = ['✦', '✧', '★', '❤', '•'];
+// 花瓣 + 星光 + 心形，营造"花瓣雨中的星空"
+const SYMBOLS = ['❀', '✿', '❁', '✦', '✧', '♥'];
+const PARTICLE_COLORS = [
+  'var(--color-star-gold)',
+  'var(--color-love-pink)',
+  'rgba(255, 240, 245, 0.9)',
+];
 
 function generateParticles(count: number): ParticleData[] {
   return Array.from({ length: count }, () => ({
     left: Math.random() * 100,
-    color: Math.random() > 0.5 ? 'var(--color-star-gold)' : 'var(--color-love-pink)',
+    color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
     opacity: Math.random() * 0.5 + 0.2,
-    fontSize: Math.random() * 12 + 6,
-    yDrift: Math.random() * 100 - 50,
+    fontSize: Math.random() * 12 + 8,
+    yDrift: Math.random() * 120 - 60,
     duration: Math.random() * 20 + 15,
     delay: Math.random() * 25,
     symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
@@ -127,11 +133,28 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-night-900/60 via-night-900/20 to-night-900/80" />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-night-900/30 to-night-900/90" />
 
+        {/* 玫瑰金调色：让照片蒙上一层暖色滤镜 */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-love-rose/15 via-transparent to-star-gold/15 mix-blend-overlay" />
+
         {/* 噪点纹理 */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}
         />
       </div>
+
+      {/* 请柬式边框：细线内框 + 四角鎏金饰角 */}
+      <motion.div
+        className="absolute inset-3 md:inset-6 pointer-events-none z-[5]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.8, duration: 1.5 }}
+      >
+        <div className="absolute inset-0 border border-white/[0.07] rounded-2xl md:rounded-3xl" />
+        <div className="absolute top-0 left-0 w-10 h-10 md:w-14 md:h-14 border-t-2 border-l-2 border-star-gold/50 rounded-tl-2xl md:rounded-tl-3xl" />
+        <div className="absolute top-0 right-0 w-10 h-10 md:w-14 md:h-14 border-t-2 border-r-2 border-star-gold/50 rounded-tr-2xl md:rounded-tr-3xl" />
+        <div className="absolute bottom-0 left-0 w-10 h-10 md:w-14 md:h-14 border-b-2 border-l-2 border-star-gold/50 rounded-bl-2xl md:rounded-bl-3xl" />
+        <div className="absolute bottom-0 right-0 w-10 h-10 md:w-14 md:h-14 border-b-2 border-r-2 border-star-gold/50 rounded-br-2xl md:rounded-br-3xl" />
+      </motion.div>
 
       {/* 内容容器 */}
       <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center gap-0">
@@ -155,7 +178,7 @@ const HomePage = () => {
         {/* 主标题 - 名字 */}
         {showTitle && (
           <motion.h1
-            className="text-5xl md:text-7xl lg:text-8xl font-elegant mb-12 md:mb-16 text-glow tracking-wide leading-snug"
+            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-elegant mb-12 md:mb-16 text-glow tracking-wide leading-snug"
             initial="hidden"
             animate="visible"
             variants={titleVariants}
@@ -168,7 +191,7 @@ const HomePage = () => {
                   variants={letterVariants}
                   initial="hidden"
                   animate="visible"
-                  className={char === '💗' ? 'mx-4 text-5xl md:text-7xl animate-heartbeat' : 'gradient-text'}
+                  className={char === '💗' ? 'mx-2 md:mx-4 text-4xl sm:text-5xl md:text-7xl animate-heartbeat' : 'gradient-text'}
                 >
                   {char === ' ' ? '\u00A0' : char}
                 </motion.span>
@@ -185,12 +208,14 @@ const HomePage = () => {
             transition={{ duration: 1, delay: 0.2 }}
             className="flex flex-col items-center"
           >
-            <div className="relative mb-10 md:mb-14">
-              <span className="absolute -left-8 -top-4 text-4xl text-white/10 font-serif">"</span>
-              <p className="text-2xl md:text-3xl text-white/90 font-romantic tracking-widest leading-relaxed px-4">
+            <div className="flex items-center gap-3 md:gap-5 mb-10 md:mb-14">
+              <div className="h-px w-10 md:w-20 bg-gradient-to-r from-transparent to-star-gold/60" />
+              <span className="text-star-gold/70 text-xs md:text-sm">✦</span>
+              <p className="text-2xl md:text-3xl text-white/90 font-romantic tracking-widest leading-relaxed">
                 Forever Love
               </p>
-              <span className="absolute -right-8 -bottom-8 text-4xl text-white/10 font-serif">"</span>
+              <span className="text-star-gold/70 text-xs md:text-sm">✦</span>
+              <div className="h-px w-10 md:w-20 bg-gradient-to-l from-transparent to-star-gold/60" />
             </div>
 
             <p className="text-base md:text-lg text-white/70 mb-14 md:mb-16 font-light tracking-wider leading-loose">
@@ -216,7 +241,7 @@ const HomePage = () => {
                 <span className="text-star-gold font-medium mx-1">{daysTogether}</span>
                 天
               </span>
-              <span className="text-love-pink animate-heartbeat text-xl">❤</span>
+              <span className="text-love-pink animate-heartbeat text-xl hidden md:inline">❤</span>
             </motion.div>
           </motion.div>
         )}
@@ -309,15 +334,16 @@ const HomePage = () => {
           }}
           animate={{
             y: ['0vh', '100vh'],
-            x: [0, p.yDrift],
-            rotate: [0, 360],
-            opacity: [0, 1, 0],
+            x: [0, p.yDrift, p.yDrift * 0.3, p.yDrift],
+            rotate: [0, 180, 300, 360],
+            opacity: [0, 1, 1, 0],
           }}
           transition={{
             duration: p.duration,
             repeat: Infinity,
             delay: p.delay,
             ease: 'linear',
+            x: { duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' },
           }}
         >
           {p.symbol}
